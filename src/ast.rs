@@ -13,20 +13,25 @@ pub mod ast {
         Number(f64),
         Comment(String),
     }
-    pub struct Expr {}
+    pub enum Expr {
+        Binary {
+            operator: Token,
+            left: Box<Expr>,
+            right: Box<Expr>,
+        },
 
-    pub struct Binary {
-        operator: Token,
-        left: Expr,
-        right: Expr,
-    }
+        Grouping {
+            expression: Box<Expr>,
+        },
 
-    pub struct Grouping {
-        expression: Expr,
-    }
+        Literal {
+            expression: Box<Expr>,
+        },
 
-    pub struct Literal {
-        expression: Expr,
+        Unary {
+            right: Box<Expr>,
+            operator: Token,
+        },
     }
 
     #[derive(Debug, Copy, Clone, PartialEq)]
