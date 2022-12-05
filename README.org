@@ -1,0 +1,19 @@
+#+title: ROX Language
+
+Language implementation based on the Crafting Interpreters article:
+https://craftinginterpreters.com/
+
+* Build:
+#+begin_src bash
+rm rox
+cargo build
+ln -s target/debug/rox rox
+#+end_src
+
+* Running:
+
+In order to run the languge interpreter:
+
+#+begin_src bash
+./rox examples/hello.rox
+#+end_src
