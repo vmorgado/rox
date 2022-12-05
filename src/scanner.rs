@@ -121,17 +121,17 @@ pub mod scanner {
         }
 
         fn init_string(self: &mut Self) -> Option<String> {
-            while self.peek().unwrap() != '"' && !self.is_at_end() {
-                if self.peek().unwrap() != '\n' {
+            while self.advance().unwrap() != '"' && !self.is_at_end() {
+                if self.peek().unwrap() == '\n' {
                     self.line = self.line + 1;
                 }
-                self.advance();
             }
 
             if self.is_at_end() {
                 panic!("{} : Unterminated String", self.line);
             }
-            let value = &self.source[self.start - 1..self.current - 1];
+            self.advance();
+            let value = &self.source[self.start + 1..self.current - 1];
             Some(value.to_string())
         }
 
