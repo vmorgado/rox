@@ -6,6 +6,7 @@ mod ast;
 mod scanner;
 extern crate clap;
 
+use crate::ast::ast::{Binary, Grouping, Literal, Primitive, Printer, Token, TokenType, Unary};
 use crate::scanner::scanner::{Scanner, TokenScanner};
 use clap::{App, ArgMatches, SubCommand};
 use std::fs;
@@ -39,6 +40,34 @@ fn run(statement: &str) {
     let mut scanner: TokenScanner = Scanner::new(statement);
     let tokens = scanner.scan_tokens();
     println!("{:?}", tokens);
+
+    let expression = Binary {
+        operator: Token {
+            token_type: TokenType::Star,
+            lexme: Some("*".to_string()),
+            literal: None,
+            line: 1,
+        },
+        left: Box::new(Unary {
+            operator: Token {
+                token_type: TokenType::Minus,
+                lexme: Some("-".to_string()),
+                literal: None,
+                line: 1,
+            },
+            right: Box::new(Literal {
+                value: Box::new(Primitive::Number(123.00)),
+            }),
+        }),
+        right: Box::new(Grouping {
+            expression: Box::new(Literal {
+                value: Box::new(Primitive::Number(45.67)),
+            }),
+        }),
+    };
+
+    let printer = Printer::new();
+    println!("{}", printer.print(&expression));
 }
 
 fn read_file(file_path: &str) -> String {
