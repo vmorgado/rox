@@ -3,6 +3,7 @@
 
 mod utils;
 mod ast;
+mod parser;
 mod scanner;
 extern crate clap;
 
@@ -42,19 +43,19 @@ fn run(statement: &str) {
     println!("{:?}", tokens);
 
     let expression = Binary {
-        operator: Token {
+        operator: Box::new(Token {
             token_type: TokenType::Star,
             lexme: Some("*".to_string()),
             literal: None,
             line: 1,
-        },
+        }),
         left: Box::new(Unary {
-            operator: Token {
+            operator: Box::new(Token {
                 token_type: TokenType::Minus,
                 lexme: Some("-".to_string()),
                 literal: None,
                 line: 1,
-            },
+            }),
             right: Box::new(Literal {
                 value: Box::new(Primitive::Number(123.00)),
             }),

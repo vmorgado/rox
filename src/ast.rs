@@ -10,6 +10,8 @@ pub mod ast {
     }
     #[derive(PartialEq, Clone, Debug)]
     pub enum Primitive {
+        Nil,
+        Boolean(bool),
         String(String),
         Number(f64),
         Comment(String),
@@ -76,6 +78,8 @@ pub mod ast {
                 Primitive::String(val) => val.to_string(),
                 Primitive::Number(val) => val.to_string(),
                 Primitive::Comment(val) => val.to_string(),
+                Primitive::Boolean(val) => val.to_string(),
+                Primitive::Nil => "nil".to_string(),
             }
         }
 
@@ -88,7 +92,7 @@ pub mod ast {
     }
 
     pub struct Binary {
-        pub operator: Token,
+        pub operator: Box<Token>,
         pub left: Box<dyn Expr>,
         pub right: Box<dyn Expr>,
     }
@@ -100,7 +104,7 @@ pub mod ast {
     }
     pub struct Unary {
         pub right: Box<dyn Expr>,
-        pub operator: Token,
+        pub operator: Box<Token>,
     }
 
     impl Expr for Binary {
