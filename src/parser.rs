@@ -1,7 +1,7 @@
 pub mod parser {
     use crate::ast::ast::{Binary, Expr, Grouping, Literal, Primitive, Token, TokenType, Unary};
 
-    struct Parser {
+    pub struct Parser {
         tokens: Vec<Token>,
         current: usize,
     }
@@ -13,6 +13,10 @@ pub mod parser {
                 tokens: tokens,
             }
         }
+        pub fn parse(self: &mut Self) -> Box<dyn Expr> {
+            self.expression()
+        }
+
         pub fn previous(self: &Self) -> &Token {
             self.tokens.get(self.current - 1).unwrap()
         }
@@ -137,14 +141,41 @@ pub mod parser {
 
             if self.do_match(Vec::<TokenType>::from([TokenType::LeftParen])) {
                 let mut expr = self.expression();
-                // self.consume(TokenType::RightParen, "Expected ')' after expression.");
+                self.consume(TokenType::RightParen, "Expected ')' after expression.");
                 return Box::new(Grouping { expression: expr });
             }
 
-            //TODO: this should output error
-            Box::new(Literal {
-                value: Box::new(Primitive::Nil),
-            })
+            self.error(self.peek(), "Expected Expression.");
+            panic!("");
+        }
+        pub fn error(self: &Self, token: &Token, message: &str) {
+            panic!("{}", message);
+        }
+
+        pub fn synchronize(self: &mut Self) {
+            self.advance();
+            while !self.is_at_end() {
+                if self.previous().token_type == TokenType::SemiColon {
+                    return;
+                }
+
+                match self.peek().token_type {
+                    TokenType::Return => return,
+                    _ => {}
+                }
+
+                self.advance();
+            }
+        }
+
+        pub fn consume(self: &mut Self, token_type: TokenType, message: &str) -> &Token {
+            if self.do_check(token_type) {
+                return self.advance();
+            }
+
+            self.error(self.peek(), message);
+            // TODO: Handle errors better;
+            panic!("");
         }
 
         pub fn expression(self: &mut Self) -> Box<dyn Expr> {
@@ -159,6 +190,8 @@ pub mod parser {
                 TokenType::EqualEqual,
             ])) {
                 let operator = self.previous().clone();
+
+                println!("{:?}", operator);
                 let right = self.comparison();
                 expr = Box::new(Binary {
                     left: expr,

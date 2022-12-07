@@ -7,7 +7,8 @@ mod parser;
 mod scanner;
 extern crate clap;
 
-use crate::ast::ast::{Binary, Grouping, Literal, Primitive, Printer, Token, TokenType, Unary};
+use crate::ast::ast::Printer;
+use crate::parser::parser::Parser;
 use crate::scanner::scanner::{Scanner, TokenScanner};
 use clap::{App, ArgMatches, SubCommand};
 use std::fs;
@@ -42,33 +43,13 @@ fn run(statement: &str) {
     let tokens = scanner.scan_tokens();
     println!("{:?}", tokens);
 
-    let expression = Binary {
-        operator: Box::new(Token {
-            token_type: TokenType::Star,
-            lexme: Some("*".to_string()),
-            literal: None,
-            line: 1,
-        }),
-        left: Box::new(Unary {
-            operator: Box::new(Token {
-                token_type: TokenType::Minus,
-                lexme: Some("-".to_string()),
-                literal: None,
-                line: 1,
-            }),
-            right: Box::new(Literal {
-                value: Box::new(Primitive::Number(123.00)),
-            }),
-        }),
-        right: Box::new(Grouping {
-            expression: Box::new(Literal {
-                value: Box::new(Primitive::Number(45.67)),
-            }),
-        }),
-    };
+    let mut parser = Parser::new(tokens);
+
+    let expression = Box::leak(parser.parse());
 
     let printer = Printer::new();
-    println!("{}", printer.print(&expression));
+    let result = printer.print(expression);
+    println!("{:?}", result);
 }
 
 fn read_file(file_path: &str) -> String {

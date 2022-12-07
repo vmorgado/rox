@@ -59,13 +59,16 @@ pub mod ast {
 
     impl Visitor for Printer {
         fn visit_binary(self: &Self, exp: &Binary) -> String {
-            self.parenthesize(
-                &exp.operator.lexme.clone().unwrap(),
-                Vec::from([
-                    Box::<&dyn Expr>::new(&*exp.left),
-                    Box::<&dyn Expr>::new(&*exp.right),
-                ]),
-            )
+            match &exp.operator.lexme.clone() {
+                Some(res) => self.parenthesize(
+                    res,
+                    Vec::from([
+                        Box::<&dyn Expr>::new(&*exp.left),
+                        Box::<&dyn Expr>::new(&*exp.right),
+                    ]),
+                ),
+                None => "".to_string(),
+            }
         }
         fn visit_grouping(self: &Self, exp: &Grouping) -> String {
             self.parenthesize(
@@ -96,12 +99,15 @@ pub mod ast {
         pub left: Box<dyn Expr>,
         pub right: Box<dyn Expr>,
     }
+
     pub struct Grouping {
         pub expression: Box<dyn Expr>,
     }
+
     pub struct Literal {
         pub value: Box<Primitive>,
     }
+
     pub struct Unary {
         pub right: Box<dyn Expr>,
         pub operator: Box<Token>,
