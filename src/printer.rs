@@ -6,7 +6,7 @@ pub mod printer {
         pub fn new() -> Printer {
             Printer {}
         }
-        fn parenthesize(self: &Self, name: &str, exprs: Vec<Box<&dyn Expr>>) -> String {
+        fn parenthesize(self: &Self, name: &str, exprs: Vec<Box<&dyn Expr<String>>>) -> String {
             let mut builder = "".to_owned();
             builder.push_str("(");
             builder.push_str(name);
@@ -18,19 +18,19 @@ pub mod printer {
 
             builder.clone()
         }
-        pub fn print(self: &Self, expr: Box<dyn Expr>) -> String {
+        pub fn print(self: &Self, expr: Box<dyn Expr<String>>) -> String {
             expr.accept(self)
         }
     }
 
-    impl Visitor for Printer {
+    impl Visitor<String> for Printer {
         fn visit_binary(self: &Self, exp: &Binary) -> String {
             match &exp.operator.lexme.clone() {
                 Some(res) => self.parenthesize(
                     res,
                     Vec::from([
-                        Box::<&dyn Expr>::new(&*exp.left),
-                        Box::<&dyn Expr>::new(&*exp.right),
+                        Box::<&dyn Expr<String>>::new(&*exp.left),
+                        Box::<&dyn Expr<String>>::new(&*exp.right),
                     ]),
                 ),
                 None => "".to_string(),
@@ -39,7 +39,7 @@ pub mod printer {
         fn visit_grouping(self: &Self, exp: &Grouping) -> String {
             self.parenthesize(
                 &"group".to_string(),
-                Vec::from([Box::<&dyn Expr>::new(&*exp.expression)]),
+                Vec::from([Box::<&dyn Expr<String>>::new(&*exp.expression)]),
             )
         }
         fn visit_literal(self: &Self, exp: &Literal) -> String {
@@ -55,7 +55,7 @@ pub mod printer {
         fn visit_unary(self: &Self, exp: &Unary) -> String {
             self.parenthesize(
                 &exp.operator.lexme.clone().unwrap(),
-                Vec::from([Box::<&dyn Expr>::new(&*exp.right)]),
+                Vec::from([Box::<&dyn Expr<String>>::new(&*exp.right)]),
             )
         }
     }

@@ -27,8 +27,8 @@ pub mod ast {
         Unary(Unary),
     }
 
-    pub trait Expr {
-        fn accept(&self, v: &dyn Visitor) -> String;
+    pub trait Expr<T> {
+        fn accept(&self, v: &dyn Visitor<T>) -> T;
     }
 
     #[derive(Debug)]
@@ -54,8 +54,8 @@ pub mod ast {
         pub operator: Box<Token>,
     }
 
-    impl Expr for AbstractExpr {
-        fn accept(self: &Self, v: &dyn Visitor) -> String {
+    impl Expr<String> for AbstractExpr {
+        fn accept(self: &Self, v: &dyn Visitor<String>) -> String {
             match self {
                 AbstractExpr::Binary(val) => v.visit_binary(val),
                 AbstractExpr::Grouping(val) => v.visit_grouping(val),

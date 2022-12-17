@@ -1,10 +1,10 @@
 pub mod visitor {
     use crate::ast::ast::{Binary, Grouping, Literal, Unary};
 
-    pub trait Visitor {
-        fn visit_binary(&self, b: &Binary) -> String;
-        fn visit_grouping(&self, g: &Grouping) -> String;
-        fn visit_literal(&self, b: &Literal) -> String;
-        fn visit_unary(&self, b: &Unary) -> String;
+    pub trait Visitor<T> {
+        fn visit_binary(&self, b: &Binary) -> T;
+        fn visit_grouping(&self, g: &Grouping) -> T;
+        fn visit_literal(&self, b: &Literal) -> T;
+        fn visit_unary(&self, b: &Unary) -> T;
     }
 }
