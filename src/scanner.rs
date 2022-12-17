@@ -62,9 +62,9 @@ pub mod scanner {
         }
 
         fn add_token(self: &mut Self, token_type: TokenType, literal: Option<Primitive>) {
+            let text = &self.source[self.start..self.current];
             match literal {
                 Some(literal) => {
-                    let text = &self.source[self.start..self.current];
                     self.tokens.push(Token {
                         token_type: token_type,
                         lexme: Some(text.to_string()),
@@ -73,7 +73,6 @@ pub mod scanner {
                     });
                 }
                 None => {
-                    let text = &self.source[self.start..self.current + 1];
                     self.tokens.push(Token {
                         token_type: token_type,
                         lexme: Some(text.to_string()),
@@ -93,17 +92,12 @@ pub mod scanner {
             if self.is_at_end() {
                 return false;
             }
-            let next_char = self.source.chars().nth(self.current + 1);
-            match next_char {
-                Some(next_char) => {
-                    if next_char != expected {
-                        return false;
-                    }
-                    self.current = self.current + 1;
-                    true
-                }
-                None => false,
+            let next_char = self.source.chars().nth(self.current).unwrap();
+            if next_char != expected {
+                return false;
             }
+            self.current = self.current + 1;
+            true
         }
 
         fn peek(self: &mut Self) -> Option<char> {
@@ -111,7 +105,7 @@ pub mod scanner {
                 return Some('\0');
             }
 
-            return self.source.chars().nth(self.current);
+            self.source.chars().nth(self.current)
         }
 
         fn peek_next(self: &Self) -> Option<char> {
@@ -123,10 +117,11 @@ pub mod scanner {
         }
 
         fn init_string(self: &mut Self) -> Option<String> {
-            while self.advance().unwrap() != '"' && !self.is_at_end() {
+            while self.peek().unwrap() != '"' && !self.is_at_end() {
                 if self.peek().unwrap() == '\n' {
                     self.line = self.line + 1;
                 }
+                self.advance();
             }
 
             if self.is_at_end() {
@@ -149,6 +144,7 @@ pub mod scanner {
             }
 
             let value = &self.source[self.start..self.current].to_string();
+            println!("{:?}", value);
             Some(value.parse::<f64>().unwrap())
         }
 
@@ -167,11 +163,8 @@ pub mod scanner {
         }
 
         fn scan_token(self: &mut Self) {
-            let token = match self.peek() {
-                Some(token) => token,
-                None => '\0',
-            };
-
+            let token = self.peek().unwrap_or('\0');
+            self.advance();
             match token {
                 '(' => self.add_token(TokenType::LeftParen, None),
                 ')' => self.add_token(TokenType::RightParen, None),
@@ -267,7 +260,6 @@ pub mod scanner {
                     }
                 }
             };
-            self.advance();
         }
 
         fn scan_tokens(self: &mut Self) -> Vec<Token> {
