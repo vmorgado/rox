@@ -73,12 +73,15 @@ pub mod scanner {
                         line: self.line,
                     });
                 }
-                None => self.tokens.push(Token {
-                    token_type: token_type,
-                    lexme: None,
-                    literal: None,
-                    line: self.line,
-                }),
+                None => {
+                    let text = &self.source[self.start..self.current + 1];
+                    self.tokens.push(Token {
+                        token_type: token_type,
+                        lexme: Some(text.to_string()),
+                        literal: None,
+                        line: self.line,
+                    });
+                }
             };
         }
 
