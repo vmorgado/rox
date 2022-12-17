@@ -19,7 +19,7 @@ pub mod ast {
         Comment(String),
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub enum AbstractExpr {
         Binary(Binary),
         Grouping(Grouping),
@@ -31,24 +31,24 @@ pub mod ast {
         fn accept(&self, v: &dyn Visitor<T>) -> T;
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Binary {
         pub operator: Box<Token>,
         pub left: Box<AbstractExpr>,
         pub right: Box<AbstractExpr>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Grouping {
         pub expression: Box<AbstractExpr>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Literal {
         pub value: Box<Primitive>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Unary {
         pub right: Box<AbstractExpr>,
         pub operator: Box<Token>,
@@ -56,6 +56,17 @@ pub mod ast {
 
     impl Expr<String> for AbstractExpr {
         fn accept(self: &Self, v: &dyn Visitor<String>) -> String {
+            match self {
+                AbstractExpr::Binary(val) => v.visit_binary(val),
+                AbstractExpr::Grouping(val) => v.visit_grouping(val),
+                AbstractExpr::Literal(val) => v.visit_literal(val),
+                AbstractExpr::Unary(val) => v.visit_unary(val),
+            }
+        }
+    }
+
+    impl Expr<Box<Primitive>> for AbstractExpr {
+        fn accept(self: &Self, v: &dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
             match self {
                 AbstractExpr::Binary(val) => v.visit_binary(val),
                 AbstractExpr::Grouping(val) => v.visit_grouping(val),

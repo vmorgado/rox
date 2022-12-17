@@ -1,12 +1,14 @@
 #[macro_use]
 mod utils;
 mod ast;
+mod interpreter;
 mod parser;
 mod printer;
 mod scanner;
 mod visitor;
 extern crate clap;
 
+use crate::interpreter::interpreter::Interpreter;
 use crate::parser::parser::Parser;
 use crate::printer::printer::Printer;
 use crate::scanner::scanner::{Scanner, TokenScanner};
@@ -44,7 +46,9 @@ fn run(statement: &str) {
     let mut parser = Parser::new(tokens);
     let expression = parser.parse();
     let printer = Printer::new();
-    let result = printer.print(expression);
+    let itp = Interpreter::new();
+    let result = printer.print(expression.clone());
+    itp.interpret(expression.clone());
     println!("{:?}", result);
 }
 
