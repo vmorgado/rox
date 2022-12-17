@@ -111,9 +111,38 @@ pub mod interpreter {
                         Primitive::Number(right_val) => {
                             return Box::new(Primitive::Number(left_val + right_val))
                         }
+                        Primitive::String(right_val_str) => {
+                            let right_val = match right_val_str.parse::<f64>() {
+                                Ok(v) => v,
+                                _ => panic!("Cannot cast the string to number for right value for sum")
+                            };
+                            return Box::new(Primitive::Number(left_val + right_val));
+                        }
                         _ => panic!("TODO: Not implemented - Second value from sum not casted to Number"),
                     },
-                        _ => panic!("TODO: Not implemented - First value from sum not casted to Number"),
+                    Primitive::String(left_val_str) => match *right {
+                        Primitive::Number(right_val) => {
+                            let left_val = match left_val_str.parse::<f64>() {
+                                Ok(v) => v,
+                                _ => panic!("Cannot cast string to number for left value for sum")
+                            };
+
+                            return Box::new(Primitive::Number((left_val + right_val).into()));
+                        }
+                        Primitive::String(right_val_str) => {
+                            let left_val = match left_val_str.parse::<f64>() {
+                                Ok(v) => v,
+                                _ => panic!("Cannot cast string to number for left value for sum")
+                            };
+                            let right_val = match right_val_str.parse::<f64>() {
+                                Ok(v) => v,
+                                _ => panic!("Cannot cast the string to number for right value for sum")
+                            };
+                            return Box::new(Primitive::Number((left_val + right_val).into()));
+                        }
+                        _ => panic!("TODO: Not implemented - Second value from sum not casted to Number"),
+                    }
+                    _ => panic!("TODO: Not implemented - First value from sum not casted to Number"),
                 },
                 TokenType::Greater => match *left {
                     Primitive::Number(left_val) => match *right {
@@ -158,7 +187,7 @@ pub mod interpreter {
                         }
                         _ => panic!("TODO: Not implemented - Can only compare Numbers"),
                     },
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                    left_val => return Box::new(Primitive::Boolean(left_val != *right)),
                 },
                 TokenType::EqualEqual => match *left {
                     Primitive::Number(left_val) => match *right {
@@ -167,7 +196,7 @@ pub mod interpreter {
                         }
                         _ => panic!("TODO: Not implemented - Can only compare Numbers"),
                     },
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                    left_val => return Box::new(Primitive::Boolean(left_val == *right)),
                 },
                 _ => {}
             };
