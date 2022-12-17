@@ -2,12 +2,13 @@
 mod utils;
 mod ast;
 mod parser;
+mod printer;
 mod scanner;
+mod visitor;
 extern crate clap;
 
-#[allow(dead_code, unused_variables, unused_imports, unused_assignments)]
-use crate::ast::ast::{AbstractExpr, Binary, Literal, Primitive, Printer, Token, TokenType};
 use crate::parser::parser::Parser;
+use crate::printer::printer::Printer;
 use crate::scanner::scanner::{Scanner, TokenScanner};
 use clap::{App, ArgMatches, SubCommand};
 use std::fs;
@@ -60,7 +61,8 @@ fn read_file(file_path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::ast::{AbstractExpr, Binary, Literal, Primitive, Printer, Token, TokenType};
+    use crate::ast::ast::{AbstractExpr, Binary, Literal, Primitive, Token, TokenType};
+    use crate::printer::printer::Printer;
     #[test]
     fn print_ast() {
         let expression = Box::new(AbstractExpr::Binary(Binary {
