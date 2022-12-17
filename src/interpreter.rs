@@ -12,7 +12,17 @@ pub mod interpreter {
         }
         pub fn interpret(self: &Self, exp: Box<dyn Expr<Box<Primitive>>>) {
             let value = self.evaluate(&*exp);
-            println!("{:?}", value);
+            println!("{:?}", self.stringify(value));
+        }
+
+        pub fn stringify(self: &Self, p: Box<Primitive>) -> String {
+            match *p {
+                Primitive::Nil => "null".to_string(),
+                Primitive::String(val) => val,
+                Primitive::Number(n) => n.to_string(),
+                Primitive::Boolean(b) => b.to_string(),
+                _ => "".to_string(),
+            }
         }
 
         pub fn evaluate(self: &Self, exp: &dyn Expr<Box<Primitive>>) -> Box<Primitive> {

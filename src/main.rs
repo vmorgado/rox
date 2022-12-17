@@ -47,9 +47,9 @@ fn run(statement: &str) {
     let expression = parser.parse();
     let printer = Printer::new();
     let itp = Interpreter::new();
-    let result = printer.print(expression.clone());
+    // can print result of printer to get ast printed
+    printer.print(expression.clone());
     itp.interpret(expression.clone());
-    println!("{:?}", result);
 }
 
 fn read_file(file_path: &str) -> String {
