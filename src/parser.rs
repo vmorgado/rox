@@ -1,3 +1,4 @@
+#[allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 pub mod parser {
     use crate::ast::ast::{
         AbstractExpr, Binary, Expr, Grouping, Literal, Primitive, Token, TokenType, Unary,
@@ -142,7 +143,7 @@ pub mod parser {
             }
 
             if self.do_match(Vec::<TokenType>::from([TokenType::LeftParen])) {
-                let mut expr = self.expression();
+                let expr = self.expression();
                 self.consume(TokenType::RightParen, "Expected ')' after expression.");
                 return Box::new(AbstractExpr::Grouping(Grouping { expression: expr }));
             }

@@ -30,7 +30,6 @@ pub mod scanner {
 
     impl Scanner for TokenScanner {
         fn new(source: &str) -> TokenScanner {
-            println!("{:?}", source);
             TokenScanner {
                 source: source.to_string(),
                 tokens: Vec::<Token>::new(),

@@ -1,13 +1,12 @@
-#[warn(dead_code, unused_variables, unused_assignments)]
 #[macro_use]
-
 mod utils;
 mod ast;
 mod parser;
 mod scanner;
 extern crate clap;
 
-use crate::ast::ast::Printer;
+#[allow(dead_code, unused_variables, unused_imports, unused_assignments)]
+use crate::ast::ast::{AbstractExpr, Binary, Literal, Primitive, Printer, Token, TokenType};
 use crate::parser::parser::Parser;
 use crate::scanner::scanner::{Scanner, TokenScanner};
 use clap::{App, ArgMatches, SubCommand};
@@ -41,12 +40,8 @@ fn repl() {
 fn run(statement: &str) {
     let mut scanner: TokenScanner = Scanner::new(statement);
     let tokens = scanner.scan_tokens();
-    println!("{:?}", tokens);
-
     let mut parser = Parser::new(tokens);
-
-    let expression = Box::leak(parser.parse());
-
+    let expression = parser.parse();
     let printer = Printer::new();
     let result = printer.print(expression);
     println!("{:?}", result);
@@ -61,4 +56,30 @@ fn read_file(file_path: &str) -> String {
     };
 
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ast::ast::{AbstractExpr, Binary, Literal, Primitive, Printer, Token, TokenType};
+    #[test]
+    fn print_ast() {
+        let expression = Box::new(AbstractExpr::Binary(Binary {
+            operator: Box::new(Token {
+                token_type: TokenType::Plus,
+                lexme: Some("+".to_string()),
+                literal: None,
+                line: 1,
+            }),
+            left: Box::new(AbstractExpr::Literal(Literal {
+                value: Box::new(Primitive::Number(2.)),
+            })),
+            right: Box::new(AbstractExpr::Literal(Literal {
+                value: Box::new(Primitive::Number(2.)),
+            })),
+        }));
+
+        let printer = Printer::new();
+        let result = printer.print(expression);
+        assert_eq!(result, "(+ 2 2)".to_string());
+    }
 }
