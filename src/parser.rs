@@ -1,5 +1,7 @@
 pub mod parser {
-    use crate::ast::ast::{Binary, Expr, Grouping, Literal, Primitive, Token, TokenType, Unary};
+    use crate::ast::ast::{
+        AbstractExpr, Binary, Expr, Grouping, Literal, Primitive, Token, TokenType, Unary,
+    };
 
     pub struct Parser {
         tokens: Vec<Token>,
@@ -13,7 +15,7 @@ pub mod parser {
                 tokens: tokens,
             }
         }
-        pub fn parse(self: &mut Self) -> Box<dyn Expr> {
+        pub fn parse(self: &mut Self) -> Box<AbstractExpr> {
             self.expression()
         }
 
@@ -54,7 +56,7 @@ pub mod parser {
             self.peek().token_type == token_type
         }
 
-        pub fn comparison(self: &mut Self) -> Box<dyn Expr> {
+        pub fn comparison(self: &mut Self) -> Box<AbstractExpr> {
             let mut expr = self.term();
 
             while self.do_match(Vec::<TokenType>::from([
@@ -65,84 +67,84 @@ pub mod parser {
             ])) {
                 let operator = self.previous().clone();
                 let right = self.term();
-                expr = Box::new(Binary {
+                expr = Box::new(AbstractExpr::Binary(Binary {
                     left: expr,
                     right: right,
                     operator: Box::new(operator),
-                });
+                }));
             }
             expr
         }
 
-        pub fn term(self: &mut Self) -> Box<dyn Expr> {
+        pub fn term(self: &mut Self) -> Box<AbstractExpr> {
             let mut expr = self.factor();
             while self.do_match(Vec::<TokenType>::from([TokenType::Minus, TokenType::Plus])) {
                 let operator = self.previous().clone();
                 let right = self.factor();
-                expr = Box::new(Binary {
+                expr = Box::new(AbstractExpr::Binary(Binary {
                     left: expr,
                     right: right,
                     operator: Box::new(operator),
-                });
+                }));
             }
             expr
         }
 
-        pub fn factor(self: &mut Self) -> Box<dyn Expr> {
+        pub fn factor(self: &mut Self) -> Box<AbstractExpr> {
             let mut expr = self.unary();
             while self.do_match(Vec::<TokenType>::from([TokenType::Slash, TokenType::Star])) {
                 let operator = self.previous().clone();
                 let right = self.unary();
-                expr = Box::new(Binary {
+                expr = Box::new(AbstractExpr::Binary(Binary {
                     left: expr,
                     right: right,
                     operator: Box::new(operator),
-                });
+                }));
             }
             expr
         }
 
-        pub fn unary(self: &mut Self) -> Box<dyn Expr> {
+        pub fn unary(self: &mut Self) -> Box<AbstractExpr> {
             if self.do_match(Vec::<TokenType>::from([TokenType::Bang, TokenType::Minus])) {
                 let operator = self.previous().clone();
                 let right = self.unary();
-                return Box::new(Unary {
+                return Box::new(AbstractExpr::Unary(Unary {
                     right: right,
                     operator: Box::new(operator),
-                });
+                }));
             }
             self.primary()
         }
 
-        pub fn primary(self: &mut Self) -> Box<dyn Expr> {
+        pub fn primary(self: &mut Self) -> Box<AbstractExpr> {
             if self.do_match(Vec::<TokenType>::from([TokenType::False])) {
-                return Box::new(Literal {
+                return Box::new(AbstractExpr::Literal(Literal {
                     value: Box::new(Primitive::Boolean(false)),
-                });
+                }));
             }
             if self.do_match(Vec::<TokenType>::from([TokenType::True])) {
-                return Box::new(Literal {
+                return Box::new(AbstractExpr::Literal(Literal {
                     value: Box::new(Primitive::Boolean(true)),
-                });
+                }));
             }
             if self.do_match(Vec::<TokenType>::from([TokenType::Nil])) {
-                return Box::new(Literal {
+                return Box::new(AbstractExpr::Literal(Literal {
                     value: Box::new(Primitive::Nil),
-                });
+                }));
             }
             if self.do_match(Vec::<TokenType>::from([
                 TokenType::Number,
                 TokenType::String,
             ])) {
-                return Box::new(Literal {
+                return Box::new(AbstractExpr::Literal(Literal {
                     value: Box::new(self.previous().literal.as_ref().unwrap().clone()),
-                });
+                }));
             }
 
             if self.do_match(Vec::<TokenType>::from([TokenType::LeftParen])) {
                 let mut expr = self.expression();
                 self.consume(TokenType::RightParen, "Expected ')' after expression.");
-                return Box::new(Grouping { expression: expr });
+                return Box::new(AbstractExpr::Grouping(Grouping { expression: expr }));
             }
 
             self.error(self.peek(), "Expected Expression.");
@@ -178,11 +180,11 @@ pub mod parser {
             panic!("");
         }
 
-        pub fn expression(self: &mut Self) -> Box<dyn Expr> {
+        pub fn expression(self: &mut Self) -> Box<AbstractExpr> {
             self.equality()
         }
 
-        pub fn equality(self: &mut Self) -> Box<dyn Expr> {
+        pub fn equality(self: &mut Self) -> Box<AbstractExpr> {
             let mut expr = self.comparison();
 
             while self.do_match(Vec::<TokenType>::from([
@@ -191,13 +193,12 @@ pub mod parser {
             ])) {
                 let operator = self.previous().clone();
 
-                println!("{:?}", operator);
                 let right = self.comparison();
-                expr = Box::new(Binary {
+                expr = Box::new(AbstractExpr::Binary(Binary {
                     left: expr,
                     right: right,
                     operator: Box::new(operator),
-                });
+                }));
             }
             expr
         }

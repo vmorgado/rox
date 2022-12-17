@@ -17,6 +17,7 @@ pub mod ast {
         Comment(String),
     }
 
+    #[derive(Debug)]
     pub enum AbstractExpr {
         Binary(Binary),
         Grouping(Grouping),
@@ -44,7 +45,7 @@ pub mod ast {
 
             builder.clone()
         }
-        pub fn print(self: &Self, expr: &dyn Expr) -> String {
+        pub fn print(self: &Self, expr: Box<dyn Expr>) -> String {
             expr.accept(self)
         }
     }
@@ -94,43 +95,37 @@ pub mod ast {
         }
     }
 
+    #[derive(Debug)]
     pub struct Binary {
         pub operator: Box<Token>,
-        pub left: Box<dyn Expr>,
-        pub right: Box<dyn Expr>,
+        pub left: Box<AbstractExpr>,
+        pub right: Box<AbstractExpr>,
     }
 
+    #[derive(Debug)]
     pub struct Grouping {
-        pub expression: Box<dyn Expr>,
+        pub expression: Box<AbstractExpr>,
     }
 
+    #[derive(Debug)]
     pub struct Literal {
         pub value: Box<Primitive>,
     }
 
+    #[derive(Debug)]
     pub struct Unary {
-        pub right: Box<dyn Expr>,
+        pub right: Box<AbstractExpr>,
         pub operator: Box<Token>,
     }
 
-    impl Expr for Binary {
+    impl Expr for AbstractExpr {
         fn accept(self: &Self, v: &dyn Visitor) -> String {
-            v.visit_binary(self)
-        }
-    }
-    impl Expr for Grouping {
-        fn accept(self: &Self, v: &dyn Visitor) -> String {
-            v.visit_grouping(self)
-        }
-    }
-    impl Expr for Literal {
-        fn accept(self: &Self, v: &dyn Visitor) -> String {
-            v.visit_literal(self)
-        }
-    }
-    impl Expr for Unary {
-        fn accept(self: &Self, v: &dyn Visitor) -> String {
-            v.visit_unary(self)
+            match self {
+                AbstractExpr::Binary(val) => v.visit_binary(val),
+                AbstractExpr::Grouping(val) => v.visit_grouping(val),
+                AbstractExpr::Literal(val) => v.visit_literal(val),
+                AbstractExpr::Unary(val) => v.visit_unary(val),
+            }
         }
     }
 
