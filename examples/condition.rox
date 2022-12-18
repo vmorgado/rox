@@ -1,0 +1,6 @@
+print "Is 3 bigger than 5";
+print 3 > 4;
+print "Is true really true?";
+print true == true;
+print "Is false not true?";
+print false != true;

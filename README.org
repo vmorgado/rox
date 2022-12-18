@@ -3,17 +3,75 @@
 Language implementation based on the Crafting Interpreters article:
 https://craftinginterpreters.com/
 
+Just a little exercise in order to learn Rust.
+
 * Build:
+
+Run this commands in order to build the project:
+
 #+begin_src bash
 rm rox
 cargo build
 ln -s target/debug/rox rox
+sudo chmod +x ./rox
 #+end_src
 
-* Running:
+This should create a symlink to the executable *rox* in the root directory of the project.
 
-In order to run the languge interpreter:
+* Executing:
+
+#+begin_src bash
+./rox # starts in repl mode
+#+end_src
+
+#+begin_src bash
+./rox <filename> # parses and executes the file
+#+end_src
+
+
+** Examples:
+
+Print "Hello World" into stdout:
 
 #+begin_src bash
 ./rox examples/hello.rox
+
+# > Hello World
+#+end_src
+
+Prints the sum of two numbers:
+
+#+begin_src bash
+./rox examples/sum_example.rox
+
+# > Sum of two numbers 2 + 2:
+# > 4
+# > Casting String to Sum 2 + 3"
+# > 5
+#+end_src
+
+Conditions:
+
+#+begin_src bash
+./rox examples/condition.rox
+
+# > Is 3 bigger than 5
+# > false
+# > Is true really true?
+# > true
+# > Is false not true?
+# > true
+#+end_src
+
+Grouping:
+
+#+begin_src bash
+./rox examples/grouping.rox
+
+# > Binary not true
+# > false
+# > Negative
+# > -3
+# > What's the result for 3 + 5 * ( 2 - 3 ) + 5 / ( 2 + 3 )
+# > -1
 #+end_src

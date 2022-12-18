@@ -1,0 +1,6 @@
+print "Binary not true";
+print !true;
+print "Negative";
+print -3;
+print "What's the result for 3 + 5 * ( 2 - 3 ) + 5 / ( 2 + 3 )";
+print 3 + 5 * ( 2 - 3 ) + 5 / ( 2 + 3 );
