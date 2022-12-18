@@ -25,22 +25,18 @@ pub enum AbstractExpr {
     Unary(Unary),
 }
 
-pub trait Expr<T> {
-    fn accept(&self, v: &dyn Visitor<T>) -> T;
-}
-
-pub trait Stmt<T> {
+pub trait Visitable<T> {
     fn accept(&self, v: &dyn Visitor<T>) -> T;
 }
 
 #[derive(Debug, Clone)]
 pub enum AbstractStmt {
-    Expression(Expression),
+    Statement(Statement),
     Print(Print),
 }
 
 #[derive(Debug, Clone)]
-pub struct Expression {
+pub struct Statement {
     pub expression: Box<AbstractExpr>,
 }
 
@@ -72,7 +68,40 @@ pub struct Unary {
     pub operator: Box<Token>,
 }
 
-impl Expr<String> for AbstractExpr {
+impl Visitable<String> for AbstractStmt {
+    fn accept(&self, v: &dyn Visitor<String>) -> String {
+        match self {
+            AbstractStmt::Statement(exp) => v.visit_stmt(exp),
+            AbstractStmt::Print(val) => v.visit_print(val),
+        };
+        "".to_string()
+    }
+}
+
+impl Visitable<Box<AbstractStmt>> for AbstractStmt {
+    fn accept(&self, v: &dyn Visitor<Box<AbstractStmt>>) -> Box<AbstractStmt> {
+        match self {
+            AbstractStmt::Statement(exp) => v.visit_stmt(exp),
+            AbstractStmt::Print(val) => v.visit_print(val),
+        };
+        Box::new(AbstractStmt::Print(Print {
+            expression: Box::new(AbstractExpr::Literal(Literal {
+                value: Box::new(Primitive::String("".to_string())),
+            })),
+        }))
+    }
+}
+
+impl Visitable<Box<Primitive>> for AbstractStmt {
+    fn accept(&self, v: &dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
+        match self {
+            AbstractStmt::Statement(exp) => v.visit_stmt(exp),
+            AbstractStmt::Print(val) => v.visit_print(val),
+        };
+        Box::new(Primitive::Boolean(true))
+    }
+}
+impl Visitable<String> for AbstractExpr {
     fn accept(&self, v: &dyn Visitor<String>) -> String {
         match self {
             AbstractExpr::Binary(val) => v.visit_binary(val),
@@ -83,7 +112,7 @@ impl Expr<String> for AbstractExpr {
     }
 }
 
-impl Expr<Box<Primitive>> for AbstractExpr {
+impl Visitable<Box<Primitive>> for AbstractExpr {
     fn accept(&self, v: &dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
         match self {
             AbstractExpr::Binary(val) => v.visit_binary(val),

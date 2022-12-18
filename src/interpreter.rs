@@ -1,15 +1,19 @@
 #![allow(dead_code, unused_imports)]
-use crate::ast::{AbstractExpr, Binary, Expr, Grouping, Literal, Primitive, TokenType, Unary};
+use crate::ast::{
+    AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, TokenType, Unary, Visitable,
+};
 use crate::visitor::Visitor;
 
+#[derive(Clone, Copy)]
 pub struct Interpreter {}
 impl Interpreter {
     pub fn new() -> Interpreter {
         Interpreter {}
     }
-    pub fn interpret(self, exp: Box<dyn Expr<Box<Primitive>>>) {
-        let value = self.evaluate(&*exp);
-        println!("{:?}", self.stringify(value));
+    pub fn interpret(self, statements: Vec<AbstractStmt>) {
+        for statement in statements {
+            self.execute(&statement);
+        }
     }
 
     pub fn stringify(self, p: Box<Primitive>) -> String {
@@ -22,8 +26,11 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&self, exp: &dyn Expr<Box<Primitive>>) -> Box<Primitive> {
+    pub fn evaluate(&self, exp: &dyn Visitable<Box<Primitive>>) -> Box<Primitive> {
         exp.accept(self)
+    }
+    pub fn execute(&self, stmt: &dyn Visitable<Box<AbstractStmt>>) {
+        stmt.accept(self);
     }
 
     pub fn is_truthy(&self, p: Box<Primitive>) -> bool {
@@ -226,5 +233,39 @@ impl Visitor<Box<Primitive>> for Interpreter {
                 _ => Box::new(Primitive::Nil),
             },
         }
+    }
+
+    fn visit_print(&self, b: &crate::ast::Print) {
+        let value = self.evaluate(&*b.expression.clone());
+        println!("{:?}", self.stringify(value));
+    }
+    fn visit_stmt(&self, b: &crate::ast::Statement) {
+        self.evaluate(&*b.expression);
+    }
+}
+
+impl Visitor<Box<AbstractStmt>> for Interpreter {
+    fn visit_binary(&self, exp: &Binary) -> Box<AbstractStmt> {
+        panic!("Not implemented")
+    }
+
+    fn visit_grouping(&self, exp: &Grouping) -> Box<AbstractStmt> {
+        panic!("Not implemented")
+    }
+
+    fn visit_literal(&self, exp: &Literal) -> Box<AbstractStmt> {
+        panic!("Not implemented")
+    }
+
+    fn visit_unary(&self, exp: &Unary) -> Box<AbstractStmt> {
+        panic!("Not implemented")
+    }
+
+    fn visit_print(&self, b: &crate::ast::Print) {
+        let value = self.evaluate(&*b.expression.clone());
+        println!("{:?}", self.stringify(value));
+    }
+    fn visit_stmt(&self, b: &crate::ast::Statement) {
+        self.evaluate(&*b.expression);
     }
 }

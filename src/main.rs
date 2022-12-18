@@ -42,15 +42,13 @@ fn repl() {
 fn run(statement: &str) {
     let mut scanner: TokenScanner = Scanner::new(statement);
     let tokens = scanner.scan_tokens();
-    println!("{:?}", tokens);
     let mut parser = Parser::new(tokens);
-    let expression = parser.parse();
-    println!("{:?}", expression);
+    let statements = parser.parse();
     // let printer = Printer::new();
-    // let itp = Interpreter::new();
     // // can print result of printer to get ast printed
     // printer.print(expression.clone());
-    // itp.interpret(expression.clone());
+    let itp = Interpreter::new();
+    itp.interpret(statements.clone());
 }
 
 fn read_file(file_path: &str) -> String {

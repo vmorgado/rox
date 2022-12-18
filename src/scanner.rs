@@ -129,7 +129,6 @@ impl Scanner for TokenScanner {
         }
 
         let value = &self.source[self.start..self.current].to_string();
-        println!("{:?}", value);
         Some(value.parse::<f64>().unwrap())
     }
 

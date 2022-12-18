@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Binary, Expr, Expression, Grouping, Literal, Primitive, Print,
-    Token, TokenType, Unary,
+    AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, Print, Statement, Token,
+    TokenType, Unary, Visitable,
 };
 
 pub struct Parser {
@@ -42,7 +42,7 @@ impl Parser {
         let value = *self.expression();
         self.consume(TokenType::SemiColon, "Expected ; after expression.");
 
-        AbstractStmt::Expression(Expression {
+        AbstractStmt::Statement(Statement {
             expression: Box::new(value),
         })
     }

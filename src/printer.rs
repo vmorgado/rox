@@ -1,12 +1,12 @@
 #![allow(dead_code, unused_imports)]
-use crate::ast::{Binary, Expr, Grouping, Literal, Primitive, Unary};
+use crate::ast::{Binary, Grouping, Literal, Primitive, Print, Statement, Unary, Visitable};
 use crate::visitor::Visitor;
 pub struct Printer {}
 impl Printer {
     pub fn new() -> Printer {
         Printer {}
     }
-    fn parenthesize(&self, name: &str, exprs: Vec<Box<&dyn Expr<String>>>) -> String {
+    fn parenthesize(&self, name: &str, exprs: Vec<Box<&dyn Visitable<String>>>) -> String {
         let mut builder = "".to_owned();
         builder.push('(');
         builder.push_str(name);
@@ -18,7 +18,7 @@ impl Printer {
 
         builder.clone()
     }
-    pub fn print(&self, expr: Box<dyn Expr<String>>) -> String {
+    pub fn print(&self, expr: Box<dyn Visitable<String>>) -> String {
         expr.accept(self)
     }
 }
@@ -29,8 +29,8 @@ impl Visitor<String> for Printer {
             Some(res) => self.parenthesize(
                 res,
                 Vec::from([
-                    Box::<&dyn Expr<String>>::new(&*exp.left),
-                    Box::<&dyn Expr<String>>::new(&*exp.right),
+                    Box::<&dyn Visitable<String>>::new(&*exp.left),
+                    Box::<&dyn Visitable<String>>::new(&*exp.right),
                 ]),
             ),
             None => "".to_string(),
@@ -39,7 +39,7 @@ impl Visitor<String> for Printer {
     fn visit_grouping(&self, exp: &Grouping) -> String {
         self.parenthesize(
             &"group".to_string(),
-            Vec::from([Box::<&dyn Expr<String>>::new(&*exp.expression)]),
+            Vec::from([Box::<&dyn Visitable<String>>::new(&*exp.expression)]),
         )
     }
     fn visit_literal(&self, exp: &Literal) -> String {
@@ -55,7 +55,11 @@ impl Visitor<String> for Printer {
     fn visit_unary(&self, exp: &Unary) -> String {
         self.parenthesize(
             &exp.operator.lexme.clone().unwrap(),
-            Vec::from([Box::<&dyn Expr<String>>::new(&*exp.right)]),
+            Vec::from([Box::<&dyn Visitable<String>>::new(&*exp.right)]),
         )
     }
+
+    fn visit_print(&self, exp: &Print) {}
+
+    fn visit_stmt(&self, exp: &Statement) {}
 }
