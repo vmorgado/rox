@@ -1,17 +1,16 @@
-#[macro_use]
-mod utils;
+#![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 mod ast;
 mod interpreter;
 mod parser;
 mod printer;
 mod scanner;
+mod utils;
 mod visitor;
 extern crate clap;
-
-use crate::interpreter::interpreter::Interpreter;
-use crate::parser::parser::Parser;
-use crate::printer::printer::Printer;
-use crate::scanner::scanner::{Scanner, TokenScanner};
+use crate::interpreter::Interpreter;
+use crate::parser::Parser;
+use crate::printer::Printer;
+use crate::scanner::{Scanner, TokenScanner};
 use clap::{App, ArgMatches, SubCommand};
 use std::fs;
 
@@ -43,13 +42,15 @@ fn repl() {
 fn run(statement: &str) {
     let mut scanner: TokenScanner = Scanner::new(statement);
     let tokens = scanner.scan_tokens();
+    println!("{:?}", tokens);
     let mut parser = Parser::new(tokens);
     let expression = parser.parse();
-    let printer = Printer::new();
-    let itp = Interpreter::new();
-    // can print result of printer to get ast printed
-    printer.print(expression.clone());
-    itp.interpret(expression.clone());
+    println!("{:?}", expression);
+    // let printer = Printer::new();
+    // let itp = Interpreter::new();
+    // // can print result of printer to get ast printed
+    // printer.print(expression.clone());
+    // itp.interpret(expression.clone());
 }
 
 fn read_file(file_path: &str) -> String {
@@ -65,8 +66,8 @@ fn read_file(file_path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::ast::{AbstractExpr, Binary, Literal, Primitive, Token, TokenType};
-    use crate::printer::printer::Printer;
+    use crate::ast::{AbstractExpr, Binary, Literal, Primitive, Token, TokenType};
+    use crate::printer::Printer;
     #[test]
     fn print_ast() {
         let expression = Box::new(AbstractExpr::Binary(Binary {
