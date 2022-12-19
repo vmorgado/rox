@@ -27,7 +27,7 @@ pub enum AbstractExpr {
 }
 
 pub trait Visitable<T> {
-    fn accept(&self, v: &dyn Visitor<T>) -> T;
+    fn accept(&self, v: &mut dyn Visitor<T>) -> T;
 }
 
 #[derive(Debug, Clone)]
@@ -81,7 +81,7 @@ pub struct Variable {
 }
 
 impl Visitable<String> for AbstractStmt {
-    fn accept(&self, v: &dyn Visitor<String>) -> String {
+    fn accept(&self, v: &mut dyn Visitor<String>) -> String {
         match self {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
@@ -92,7 +92,7 @@ impl Visitable<String> for AbstractStmt {
 }
 
 impl Visitable<Box<AbstractStmt>> for AbstractStmt {
-    fn accept(&self, v: &dyn Visitor<Box<AbstractStmt>>) -> Box<AbstractStmt> {
+    fn accept(&self, v: &mut dyn Visitor<Box<AbstractStmt>>) -> Box<AbstractStmt> {
         match self {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
@@ -107,7 +107,7 @@ impl Visitable<Box<AbstractStmt>> for AbstractStmt {
 }
 
 impl Visitable<Box<Primitive>> for AbstractStmt {
-    fn accept(&self, v: &dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
+    fn accept(&self, v: &mut dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
         match self {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
@@ -117,7 +117,7 @@ impl Visitable<Box<Primitive>> for AbstractStmt {
     }
 }
 impl Visitable<String> for AbstractExpr {
-    fn accept(&self, v: &dyn Visitor<String>) -> String {
+    fn accept(&self, v: &mut dyn Visitor<String>) -> String {
         match self {
             AbstractExpr::Binary(val) => v.visit_binary(val),
             AbstractExpr::Grouping(val) => v.visit_grouping(val),
@@ -129,7 +129,7 @@ impl Visitable<String> for AbstractExpr {
 }
 
 impl Visitable<Box<Primitive>> for AbstractExpr {
-    fn accept(&self, v: &dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
+    fn accept(&self, v: &mut dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
         match self {
             AbstractExpr::Binary(val) => v.visit_binary(val),
             AbstractExpr::Grouping(val) => v.visit_grouping(val),

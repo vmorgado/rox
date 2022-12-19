@@ -8,7 +8,7 @@ impl Printer {
     pub fn new() -> Printer {
         Printer {}
     }
-    fn parenthesize(&self, name: &str, exprs: Vec<Box<&dyn Visitable<String>>>) -> String {
+    fn parenthesize(&mut self, name: &str, exprs: Vec<Box<&dyn Visitable<String>>>) -> String {
         let mut builder = "".to_owned();
         builder.push('(');
         builder.push_str(name);
@@ -20,13 +20,13 @@ impl Printer {
 
         builder.clone()
     }
-    pub fn print(&self, expr: Box<dyn Visitable<String>>) -> String {
+    pub fn print(&mut self, expr: Box<dyn Visitable<String>>) -> String {
         expr.accept(self)
     }
 }
 
 impl Visitor<String> for Printer {
-    fn visit_binary(&self, exp: &Binary) -> String {
+    fn visit_binary(&mut self, exp: &Binary) -> String {
         match &exp.operator.lexme.clone() {
             Some(res) => self.parenthesize(
                 res,
@@ -38,13 +38,13 @@ impl Visitor<String> for Printer {
             None => "".to_string(),
         }
     }
-    fn visit_grouping(&self, exp: &Grouping) -> String {
+    fn visit_grouping(&mut self, exp: &Grouping) -> String {
         self.parenthesize(
             &"group".to_string(),
             Vec::from([Box::<&dyn Visitable<String>>::new(&*exp.expression)]),
         )
     }
-    fn visit_literal(&self, exp: &Literal) -> String {
+    fn visit_literal(&mut self, exp: &Literal) -> String {
         match &*exp.value {
             Primitive::String(val) => val.to_string(),
             Primitive::Number(val) => val.to_string(),
@@ -54,20 +54,20 @@ impl Visitor<String> for Printer {
         }
     }
 
-    fn visit_unary(&self, exp: &Unary) -> String {
+    fn visit_unary(&mut self, exp: &Unary) -> String {
         self.parenthesize(
             &exp.operator.lexme.clone().unwrap(),
             Vec::from([Box::<&dyn Visitable<String>>::new(&*exp.right)]),
         )
     }
 
-    fn visit_variable(&self, b: &Variable) -> String {
+    fn visit_variable(&mut self, b: &Variable) -> String {
         "Not implemented".to_string()
     }
 
-    fn visit_print(&self, exp: &Print) {}
+    fn visit_print(&mut self, exp: &Print) {}
 
-    fn visit_stmt(&self, exp: &Statement) {}
+    fn visit_stmt(&mut self, exp: &Statement) {}
 
-    fn visit_var(&self, b: &crate::ast::Var) {}
+    fn visit_var(&mut self, b: &crate::ast::Var) {}
 }

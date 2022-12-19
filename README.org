@@ -75,3 +75,16 @@ Grouping:
 # > What's the result for 3 + 5 * ( 2 - 3 ) + 5 / ( 2 + 3 )
 # > -1
 #+end_src
+
+Declaration:
+
+#+begin_src bash
+./rox examples/cdeclaration.rox
+
+# > printing a:
+# > 10
+# > printing b:
+# > 20"
+# > printing a * b
+# > 200
+#+end_src

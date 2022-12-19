@@ -1,0 +1,8 @@
+var a = 10;
+print "printing a:";
+print a;
+var b = 20;
+print "printing b:";
+print b;
+print "printing a * b";
+print a * b;

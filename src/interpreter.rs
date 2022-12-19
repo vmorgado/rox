@@ -26,16 +26,16 @@ impl Interpreter {
             environment: Environment::new(),
         }
     }
-    pub fn interpret(self, statements: Vec<AbstractStmt>) {
+    pub fn interpret(mut self, statements: Vec<AbstractStmt>) {
         for statement in statements {
             self.execute(&statement);
         }
     }
 
-    pub fn evaluate(&self, exp: &dyn Visitable<Box<Primitive>>) -> Box<Primitive> {
+    pub fn evaluate(&mut self, exp: &dyn Visitable<Box<Primitive>>) -> Box<Primitive> {
         exp.accept(self)
     }
-    pub fn execute(&self, stmt: &dyn Visitable<Box<AbstractStmt>>) {
+    pub fn execute(&mut self, stmt: &dyn Visitable<Box<AbstractStmt>>) {
         stmt.accept(self);
     }
 
@@ -49,7 +49,7 @@ impl Interpreter {
 }
 
 impl Visitor<Box<Primitive>> for Interpreter {
-    fn visit_binary(&self, exp: &Binary) -> Box<Primitive> {
+    fn visit_binary(&mut self, exp: &Binary) -> Box<Primitive> {
         let left = match &*exp.left {
             AbstractExpr::Literal(l) => l.value.clone(),
             val => self.evaluate(&val.clone()),
@@ -215,17 +215,17 @@ impl Visitor<Box<Primitive>> for Interpreter {
         Box::new(Primitive::Nil)
     }
 
-    fn visit_grouping(&self, exp: &Grouping) -> Box<Primitive> {
+    fn visit_grouping(&mut self, exp: &Grouping) -> Box<Primitive> {
         let val = &*exp.expression;
         self.evaluate(val)
     }
 
-    fn visit_literal(&self, exp: &Literal) -> Box<Primitive> {
+    fn visit_literal(&mut self, exp: &Literal) -> Box<Primitive> {
         let val = &exp.value;
         Box::new(*val.clone())
     }
 
-    fn visit_unary(&self, exp: &Unary) -> Box<Primitive> {
+    fn visit_unary(&mut self, exp: &Unary) -> Box<Primitive> {
         let val = &*exp.right;
         let right = self.evaluate(val);
 
@@ -240,56 +240,56 @@ impl Visitor<Box<Primitive>> for Interpreter {
             },
         }
     }
-    fn visit_variable(&self, b: &Variable) -> Box<Primitive> {
-        panic!("Not implemented")
+    fn visit_variable(&mut self, b: &Variable) -> Box<Primitive> {
+        self.environment.get(&*b.name)
     }
 
-    fn visit_var(&self, b: &crate::ast::Var) {}
-    fn visit_print(&self, b: &crate::ast::Print) {
+    fn visit_var(&mut self, b: &crate::ast::Var) {}
+    fn visit_print(&mut self, b: &crate::ast::Print) {
         let value = self.evaluate(&*b.expression.clone());
         println!("{:?}", stringify(&value));
     }
-    fn visit_stmt(&self, b: &crate::ast::Statement) {
+    fn visit_stmt(&mut self, b: &crate::ast::Statement) {
         self.evaluate(&*b.expression);
     }
 }
 
 impl Visitor<Box<AbstractStmt>> for Interpreter {
-    fn visit_binary(&self, exp: &Binary) -> Box<AbstractStmt> {
+    fn visit_binary(&mut self, exp: &Binary) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 
-    fn visit_grouping(&self, exp: &Grouping) -> Box<AbstractStmt> {
+    fn visit_grouping(&mut self, exp: &Grouping) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 
-    fn visit_literal(&self, exp: &Literal) -> Box<AbstractStmt> {
+    fn visit_literal(&mut self, exp: &Literal) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 
-    fn visit_unary(&self, exp: &Unary) -> Box<AbstractStmt> {
+    fn visit_unary(&mut self, exp: &Unary) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 
-    fn visit_variable(&self, b: &Variable) -> Box<AbstractStmt> {
+    fn visit_variable(&mut self, b: &Variable) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 
-    fn visit_print(&self, b: &Print) {
+    fn visit_print(&mut self, b: &Print) {
         let value = self.evaluate(&*b.expression.clone());
         println!("{:?}", stringify(&value));
     }
-    fn visit_stmt(&self, b: &Statement) {
+    fn visit_stmt(&mut self, b: &Statement) {
         self.evaluate(&*b.expression);
     }
 
-    fn visit_var(&self, b: &crate::ast::Var) {
-        // let value = match b.initializer {
-        //     Some(exp) => *self.evaluate(&exp),
-        //     None => Primitive::Nil,
-        // };
+    fn visit_var(&mut self, b: &crate::ast::Var) {
+        let value = match &b.initializer {
+            Some(exp) => *self.evaluate(exp),
+            None => Primitive::Nil,
+        };
 
-        // self.environment
-        //     .define(*b.name.lexme.as_ref().unwrap(), value);
+        let name: String = String::from(b.name.lexme.as_ref().unwrap());
+        self.environment.define(name, value);
     }
 }

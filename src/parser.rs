@@ -16,25 +16,24 @@ impl Parser {
     pub fn parse(&mut self) -> Vec<AbstractStmt> {
         let mut statements = Vec::<AbstractStmt>::new();
         while !self.is_at_end() {
-            statements.push(self.statement())
+            statements.push(*self.declaration())
         }
 
         statements
     }
 
-    pub fn declaration(&mut self) -> Option<Box<AbstractStmt>> {
+    pub fn declaration(&mut self) -> Box<AbstractStmt> {
         if self.do_match(Vec::from([TokenType::Var])) {
-            self.var_declaration();
-
-            return Some(Box::new(self.statement()));
+            return self.var_declaration();
         }
-        // TODO : handle properly error here
 
-        self.synchronize();
-        None
+        return Box::new(self.statement());
+        // TODO : handle properly error here
+        // self.synchronize();
+        // None
     }
 
-    pub fn var_declaration(&mut self) -> Box<Var> {
+    pub fn var_declaration(&mut self) -> Box<AbstractStmt> {
         let name = self
             .consume(TokenType::Identifier, "Expect variable name.")
             .clone();
@@ -45,10 +44,10 @@ impl Parser {
         }
 
         self.consume(TokenType::SemiColon, "Expected ',' after variable.");
-        Box::new(Var {
+        Box::new(AbstractStmt::Var(Var {
             name: Box::new(name),
             initializer,
-        })
+        }))
     }
 
     pub fn statement(&mut self) -> AbstractStmt {
