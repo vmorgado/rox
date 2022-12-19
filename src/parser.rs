@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 use crate::ast::{
     AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, Print, Statement, Token,
-    TokenType, Unary, Visitable,
+    TokenType, Unary, Var, Variable, Visitable,
 };
 
 pub struct Parser {
@@ -21,6 +21,36 @@ impl Parser {
 
         statements
     }
+
+    pub fn declaration(&mut self) -> Option<Box<AbstractStmt>> {
+        if self.do_match(Vec::from([TokenType::Var])) {
+            self.var_declaration();
+
+            return Some(Box::new(self.statement()));
+        }
+        // TODO : handle properly error here
+
+        self.synchronize();
+        None
+    }
+
+    pub fn var_declaration(&mut self) -> Box<Var> {
+        let name = self
+            .consume(TokenType::Identifier, "Expect variable name.")
+            .clone();
+
+        let mut initializer: Option<AbstractExpr> = None;
+        if self.do_match(Vec::from([TokenType::Equal])) {
+            initializer = Some(*self.expression());
+        }
+
+        self.consume(TokenType::SemiColon, "Expected ',' after variable.");
+        Box::new(Var {
+            name: Box::new(name),
+            initializer,
+        })
+    }
+
     pub fn statement(&mut self) -> AbstractStmt {
         if self.do_match(Vec::<TokenType>::from([TokenType::Print])) {
             return self.print_stmt();
@@ -173,6 +203,12 @@ impl Parser {
             let expr = self.expression();
             self.consume(TokenType::RightParen, "Expected ')' after expression.");
             return Box::new(AbstractExpr::Grouping(Grouping { expression: expr }));
+        }
+
+        if self.do_match(Vec::<TokenType>::from([TokenType::Identifier])) {
+            return Box::new(AbstractExpr::Variable(Variable {
+                name: Box::new(self.previous().clone()),
+            }));
         }
 
         self.error(self.peek(), "Expected Expression.");

@@ -1,28 +1,34 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, TokenType, Unary, Visitable,
+    AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, Print, Statement, TokenType,
+    Unary, Variable, Visitable,
 };
+use crate::environment::Environment;
 use crate::visitor::Visitor;
 
-#[derive(Clone, Copy)]
-pub struct Interpreter {}
+pub fn stringify(p: &Primitive) -> String {
+    match p {
+        Primitive::Nil => "null".to_string(),
+        Primitive::String(val) => val.to_string(),
+        Primitive::Number(n) => n.to_string(),
+        Primitive::Boolean(b) => b.to_string(),
+        _ => "".to_string(),
+    }
+}
+
+#[derive(Clone)]
+pub struct Interpreter {
+    environment: Environment,
+}
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter {}
+        Interpreter {
+            environment: Environment::new(),
+        }
     }
     pub fn interpret(self, statements: Vec<AbstractStmt>) {
         for statement in statements {
             self.execute(&statement);
-        }
-    }
-
-    pub fn stringify(self, p: Box<Primitive>) -> String {
-        match *p {
-            Primitive::Nil => "null".to_string(),
-            Primitive::String(val) => val,
-            Primitive::Number(n) => n.to_string(),
-            Primitive::Boolean(b) => b.to_string(),
-            _ => "".to_string(),
         }
     }
 
@@ -234,10 +240,14 @@ impl Visitor<Box<Primitive>> for Interpreter {
             },
         }
     }
+    fn visit_variable(&self, b: &Variable) -> Box<Primitive> {
+        panic!("Not implemented")
+    }
 
+    fn visit_var(&self, b: &crate::ast::Var) {}
     fn visit_print(&self, b: &crate::ast::Print) {
         let value = self.evaluate(&*b.expression.clone());
-        println!("{:?}", self.stringify(value));
+        println!("{:?}", stringify(&value));
     }
     fn visit_stmt(&self, b: &crate::ast::Statement) {
         self.evaluate(&*b.expression);
@@ -261,11 +271,25 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
         panic!("Not implemented")
     }
 
-    fn visit_print(&self, b: &crate::ast::Print) {
-        let value = self.evaluate(&*b.expression.clone());
-        println!("{:?}", self.stringify(value));
+    fn visit_variable(&self, b: &Variable) -> Box<AbstractStmt> {
+        panic!("Not implemented")
     }
-    fn visit_stmt(&self, b: &crate::ast::Statement) {
+
+    fn visit_print(&self, b: &Print) {
+        let value = self.evaluate(&*b.expression.clone());
+        println!("{:?}", stringify(&value));
+    }
+    fn visit_stmt(&self, b: &Statement) {
         self.evaluate(&*b.expression);
+    }
+
+    fn visit_var(&self, b: &crate::ast::Var) {
+        // let value = match b.initializer {
+        //     Some(exp) => *self.evaluate(&exp),
+        //     None => Primitive::Nil,
+        // };
+
+        // self.environment
+        //     .define(*b.name.lexme.as_ref().unwrap(), value);
     }
 }

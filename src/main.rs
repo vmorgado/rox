@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 mod ast;
+mod environment;
 mod interpreter;
 mod parser;
 mod printer;

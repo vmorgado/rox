@@ -23,6 +23,7 @@ pub enum AbstractExpr {
     Grouping(Grouping),
     Literal(Literal),
     Unary(Unary),
+    Variable(Variable),
 }
 
 pub trait Visitable<T> {
@@ -33,6 +34,7 @@ pub trait Visitable<T> {
 pub enum AbstractStmt {
     Statement(Statement),
     Print(Print),
+    Var(Var),
 }
 
 #[derive(Debug, Clone)]
@@ -43,6 +45,12 @@ pub struct Statement {
 #[derive(Debug, Clone)]
 pub struct Print {
     pub expression: Box<AbstractExpr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Var {
+    pub name: Box<Token>,
+    pub initializer: Option<AbstractExpr>,
 }
 
 #[derive(Debug, Clone)]
@@ -67,12 +75,17 @@ pub struct Unary {
     pub right: Box<AbstractExpr>,
     pub operator: Box<Token>,
 }
+#[derive(Debug, Clone)]
+pub struct Variable {
+    pub name: Box<Token>,
+}
 
 impl Visitable<String> for AbstractStmt {
     fn accept(&self, v: &dyn Visitor<String>) -> String {
         match self {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
+            AbstractStmt::Var(val) => v.visit_var(val),
         };
         "".to_string()
     }
@@ -83,6 +96,7 @@ impl Visitable<Box<AbstractStmt>> for AbstractStmt {
         match self {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
+            AbstractStmt::Var(val) => v.visit_var(val),
         };
         Box::new(AbstractStmt::Print(Print {
             expression: Box::new(AbstractExpr::Literal(Literal {
@@ -97,6 +111,7 @@ impl Visitable<Box<Primitive>> for AbstractStmt {
         match self {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
+            AbstractStmt::Var(val) => v.visit_var(val),
         };
         Box::new(Primitive::Boolean(true))
     }
@@ -108,6 +123,7 @@ impl Visitable<String> for AbstractExpr {
             AbstractExpr::Grouping(val) => v.visit_grouping(val),
             AbstractExpr::Literal(val) => v.visit_literal(val),
             AbstractExpr::Unary(val) => v.visit_unary(val),
+            AbstractExpr::Variable(val) => v.visit_variable(val),
         }
     }
 }
@@ -119,6 +135,7 @@ impl Visitable<Box<Primitive>> for AbstractExpr {
             AbstractExpr::Grouping(val) => v.visit_grouping(val),
             AbstractExpr::Literal(val) => v.visit_literal(val),
             AbstractExpr::Unary(val) => v.visit_unary(val),
+            AbstractExpr::Variable(val) => v.visit_variable(val),
         }
     }
 }

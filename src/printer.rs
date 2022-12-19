@@ -1,5 +1,7 @@
 #![allow(dead_code, unused_imports)]
-use crate::ast::{Binary, Grouping, Literal, Primitive, Print, Statement, Unary, Visitable};
+use crate::ast::{
+    Binary, Grouping, Literal, Primitive, Print, Statement, Unary, Variable, Visitable,
+};
 use crate::visitor::Visitor;
 pub struct Printer {}
 impl Printer {
@@ -59,7 +61,13 @@ impl Visitor<String> for Printer {
         )
     }
 
+    fn visit_variable(&self, b: &Variable) -> String {
+        "Not implemented".to_string()
+    }
+
     fn visit_print(&self, exp: &Print) {}
 
     fn visit_stmt(&self, exp: &Statement) {}
+
+    fn visit_var(&self, b: &crate::ast::Var) {}
 }
