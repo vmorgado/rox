@@ -84,7 +84,7 @@ mod tests {
             })),
         }));
 
-        let printer = Printer::new();
+        let mut printer = Printer::new();
         let result = printer.print(expression);
         assert_eq!(result, "(+ 2 2)".to_string());
     }

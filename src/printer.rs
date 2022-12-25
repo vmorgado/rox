@@ -61,6 +61,10 @@ impl Visitor<String> for Printer {
         )
     }
 
+    fn visit_assign(&mut self, exp: &crate::ast::Assign) -> String {
+        "Not implemented".to_string()
+    }
+
     fn visit_variable(&mut self, b: &Variable) -> String {
         "Not implemented".to_string()
     }

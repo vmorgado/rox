@@ -3,7 +3,7 @@ use crate::ast::{
     AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, Print, Statement, TokenType,
     Unary, Variable, Visitable,
 };
-use crate::environment::Environment;
+use crate::environment::{self, Environment};
 use crate::visitor::Visitor;
 
 pub fn stringify(p: &Primitive) -> String {
@@ -243,6 +243,12 @@ impl Visitor<Box<Primitive>> for Interpreter {
     fn visit_variable(&mut self, b: &Variable) -> Box<Primitive> {
         self.environment.get(&*b.name)
     }
+    fn visit_assign(&mut self, expr: &crate::ast::Assign) -> Box<Primitive> {
+        let value = self.evaluate(&*expr.value);
+        self.environment.assign(&*expr.name, *value.clone());
+
+        value
+    }
 
     fn visit_var(&mut self, b: &crate::ast::Var) {}
     fn visit_print(&mut self, b: &crate::ast::Print) {
@@ -272,6 +278,10 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
     }
 
     fn visit_variable(&mut self, b: &Variable) -> Box<AbstractStmt> {
+        panic!("Not implemented")
+    }
+
+    fn visit_assign(&mut self, exp: &crate::ast::Assign) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 

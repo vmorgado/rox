@@ -19,6 +19,7 @@ pub enum Primitive {
 
 #[derive(Debug, Clone)]
 pub enum AbstractExpr {
+    Assign(Assign),
     Binary(Binary),
     Grouping(Grouping),
     Literal(Literal),
@@ -51,6 +52,12 @@ pub struct Print {
 pub struct Var {
     pub name: Box<Token>,
     pub initializer: Option<AbstractExpr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Assign {
+    pub name: Box<Token>,
+    pub value: Box<AbstractExpr>,
 }
 
 #[derive(Debug, Clone)]
@@ -124,6 +131,7 @@ impl Visitable<String> for AbstractExpr {
             AbstractExpr::Literal(val) => v.visit_literal(val),
             AbstractExpr::Unary(val) => v.visit_unary(val),
             AbstractExpr::Variable(val) => v.visit_variable(val),
+            AbstractExpr::Assign(val) => v.visit_assign(val),
         }
     }
 }
@@ -136,6 +144,7 @@ impl Visitable<Box<Primitive>> for AbstractExpr {
             AbstractExpr::Literal(val) => v.visit_literal(val),
             AbstractExpr::Unary(val) => v.visit_unary(val),
             AbstractExpr::Variable(val) => v.visit_variable(val),
+            AbstractExpr::Assign(val) => v.visit_assign(val),
         }
     }
 }
