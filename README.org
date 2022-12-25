@@ -46,7 +46,7 @@ Prints the sum of two numbers:
 
 # > Sum of two numbers 2 + 2:
 # > 4
-# > Casting String to Sum 2 + 3"
+# > Casting String to Sum 2 + 3
 # > 5
 #+end_src
 
@@ -79,12 +79,37 @@ Grouping:
 Declaration:
 
 #+begin_src bash
-./rox examples/cdeclaration.rox
+./rox examples/declaration.rox
 
 # > printing a:
 # > 10
 # > printing b:
-# > 20"
+# > 20
 # > printing a * b
 # > 200
+#+end_src
+
+Assignemnt:
+
+#+begin_src bash
+./rox examples/assignment.rox
+
+# > 10
+# > false
+#+end_src
+
+Variable Scopes and Code Blocks:
+
+#+begin_src bash
+./rox examples/scopes.rox
+
+# > inner a
+# > outer b
+# > global c
+# > outer a
+# > outer b
+# > global c
+# > global a
+# > global b
+# > global c
 #+end_src

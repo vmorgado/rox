@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, Print, Statement, Token,
-    TokenType, Unary, Var, Variable, Visitable,
+    AbstractExpr, AbstractStmt, Binary, Block, Grouping, Literal, Primitive, Print, Statement,
+    Token, TokenType, Unary, Var, Variable, Visitable,
 };
 
 pub struct Parser {
@@ -19,6 +19,17 @@ impl Parser {
             statements.push(*self.declaration())
         }
 
+        statements
+    }
+
+    pub fn block(&mut self) -> Vec<AbstractStmt> {
+        let mut statements: Vec<AbstractStmt> = Vec::new();
+
+        while !self.do_check(TokenType::RightBrace) && !self.is_at_end() {
+            statements.push(*self.declaration());
+        }
+
+        self.consume(TokenType::RightBrace, "Expected ; after block.");
         statements
     }
 
@@ -53,6 +64,12 @@ impl Parser {
     pub fn statement(&mut self) -> AbstractStmt {
         if self.do_match(Vec::<TokenType>::from([TokenType::Print])) {
             return self.print_stmt();
+        }
+
+        if self.do_match(Vec::<TokenType>::from([TokenType::LeftBrace])) {
+            return AbstractStmt::Block(Block {
+                stmts: self.block(),
+            });
         }
 
         self.expr_stmt()

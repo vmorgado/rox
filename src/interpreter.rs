@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Binary, Grouping, Literal, Primitive, Print, Statement, TokenType,
-    Unary, Variable, Visitable,
+    AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, Literal, Primitive, Print,
+    Statement, TokenType, Unary, Var, Variable, Visitable,
 };
 use crate::environment::{self, Environment};
 use crate::visitor::Visitor;
@@ -35,8 +35,20 @@ impl Interpreter {
     pub fn evaluate(&mut self, exp: &dyn Visitable<Box<Primitive>>) -> Box<Primitive> {
         exp.accept(self)
     }
+
     pub fn execute(&mut self, stmt: &dyn Visitable<Box<AbstractStmt>>) {
         stmt.accept(self);
+    }
+
+    pub fn execute_block(&mut self, stmts: &Vec<AbstractStmt>, env: Environment) {
+        let previous = self.environment.clone();
+
+        self.environment = env;
+        for stmt in stmts {
+            self.execute(stmt);
+        }
+
+        self.environment = previous;
     }
 
     pub fn is_truthy(&self, p: Box<Primitive>) -> bool {
@@ -243,21 +255,24 @@ impl Visitor<Box<Primitive>> for Interpreter {
     fn visit_variable(&mut self, b: &Variable) -> Box<Primitive> {
         self.environment.get(&*b.name)
     }
-    fn visit_assign(&mut self, expr: &crate::ast::Assign) -> Box<Primitive> {
+    fn visit_assign(&mut self, expr: &Assign) -> Box<Primitive> {
         let value = self.evaluate(&*expr.value);
         self.environment.assign(&*expr.name, *value.clone());
 
         value
     }
 
-    fn visit_var(&mut self, b: &crate::ast::Var) {}
-    fn visit_print(&mut self, b: &crate::ast::Print) {
+    fn visit_var(&mut self, b: &Var) {}
+    fn visit_print(&mut self, b: &Print) {
         let value = self.evaluate(&*b.expression.clone());
         println!("{:?}", stringify(&value));
     }
-    fn visit_stmt(&mut self, b: &crate::ast::Statement) {
+
+    fn visit_stmt(&mut self, b: &Statement) {
         self.evaluate(&*b.expression);
     }
+
+    fn visit_block(&mut self, b: &Block) {}
 }
 
 impl Visitor<Box<AbstractStmt>> for Interpreter {
@@ -281,7 +296,7 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
         panic!("Not implemented")
     }
 
-    fn visit_assign(&mut self, exp: &crate::ast::Assign) -> Box<AbstractStmt> {
+    fn visit_assign(&mut self, exp: &Assign) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 
@@ -293,7 +308,7 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
         self.evaluate(&*b.expression);
     }
 
-    fn visit_var(&mut self, b: &crate::ast::Var) {
+    fn visit_var(&mut self, b: &Var) {
         let value = match &b.initializer {
             Some(exp) => *self.evaluate(exp),
             None => Primitive::Nil,
@@ -301,5 +316,12 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
 
         let name: String = String::from(b.name.lexme.as_ref().unwrap());
         self.environment.define(name, value);
+    }
+
+    fn visit_block(&mut self, b: &Block) {
+        self.execute_block(
+            &b.stmts,
+            Environment::enclosed_by(Box::new(self.environment.clone())),
+        );
     }
 }

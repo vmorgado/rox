@@ -34,8 +34,14 @@ pub trait Visitable<T> {
 #[derive(Debug, Clone)]
 pub enum AbstractStmt {
     Statement(Statement),
+    Block(Block),
     Print(Print),
     Var(Var),
+}
+
+#[derive(Debug, Clone)]
+pub struct Block {
+    pub stmts: Vec<AbstractStmt>,
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +99,7 @@ impl Visitable<String> for AbstractStmt {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
             AbstractStmt::Var(val) => v.visit_var(val),
+            AbstractStmt::Block(val) => v.visit_block(val),
         };
         "".to_string()
     }
@@ -104,6 +111,7 @@ impl Visitable<Box<AbstractStmt>> for AbstractStmt {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
             AbstractStmt::Var(val) => v.visit_var(val),
+            AbstractStmt::Block(val) => v.visit_block(val),
         };
         Box::new(AbstractStmt::Print(Print {
             expression: Box::new(AbstractExpr::Literal(Literal {
@@ -119,6 +127,7 @@ impl Visitable<Box<Primitive>> for AbstractStmt {
             AbstractStmt::Statement(exp) => v.visit_stmt(exp),
             AbstractStmt::Print(val) => v.visit_print(val),
             AbstractStmt::Var(val) => v.visit_var(val),
+            AbstractStmt::Block(val) => v.visit_block(val),
         };
         Box::new(Primitive::Boolean(true))
     }
