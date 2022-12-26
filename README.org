@@ -50,10 +50,10 @@ Prints the sum of two numbers:
 # > 5
 #+end_src
 
-Conditions:
+Evaluation:
 
 #+begin_src bash
-./rox examples/condition.rox
+./rox examples/evaluation.rox
 
 # > Is 3 bigger than 5
 # > false
@@ -112,4 +112,13 @@ Variable Scopes and Code Blocks:
 # > global a
 # > global b
 # > global c
+#+end_src
+
+
+Conditions and Flow:
+
+#+begin_src bash
+./rox examples/condition.rox
+
+# > Yes
 #+end_src

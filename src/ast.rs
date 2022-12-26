@@ -37,6 +37,14 @@ pub enum AbstractStmt {
     Block(Block),
     Print(Print),
     Var(Var),
+    If(If),
+}
+
+#[derive(Debug, Clone)]
+pub struct If {
+    pub condition: Box<AbstractExpr>,
+    pub then_branch: Box<AbstractStmt>,
+    pub else_branch: Option<Box<AbstractStmt>>,
 }
 
 #[derive(Debug, Clone)]
@@ -100,6 +108,7 @@ impl Visitable<String> for AbstractStmt {
             AbstractStmt::Print(val) => v.visit_print(val),
             AbstractStmt::Var(val) => v.visit_var(val),
             AbstractStmt::Block(val) => v.visit_block(val),
+            AbstractStmt::If(val) => v.visit_if(val),
         };
         "".to_string()
     }
@@ -112,6 +121,7 @@ impl Visitable<Box<AbstractStmt>> for AbstractStmt {
             AbstractStmt::Print(val) => v.visit_print(val),
             AbstractStmt::Var(val) => v.visit_var(val),
             AbstractStmt::Block(val) => v.visit_block(val),
+            AbstractStmt::If(val) => v.visit_if(val),
         };
         Box::new(AbstractStmt::Print(Print {
             expression: Box::new(AbstractExpr::Literal(Literal {
@@ -128,6 +138,7 @@ impl Visitable<Box<Primitive>> for AbstractStmt {
             AbstractStmt::Print(val) => v.visit_print(val),
             AbstractStmt::Var(val) => v.visit_var(val),
             AbstractStmt::Block(val) => v.visit_block(val),
+            AbstractStmt::If(val) => v.visit_if(val),
         };
         Box::new(Primitive::Boolean(true))
     }

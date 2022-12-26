@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Binary, Block, Grouping, Literal, Primitive, Print, Statement,
+    AbstractExpr, AbstractStmt, Binary, Block, Grouping, If, Literal, Primitive, Print, Statement,
     Token, TokenType, Unary, Var, Variable, Visitable,
 };
 
@@ -72,7 +72,28 @@ impl Parser {
             });
         }
 
+        if self.do_match(Vec::<TokenType>::from([TokenType::If])) {
+            return self.if_stmt();
+        }
+
         self.expr_stmt()
+    }
+
+    pub fn if_stmt(&mut self) -> AbstractStmt {
+        self.consume(TokenType::LeftParen, "Expected '(' after 'if'.");
+        let condition = self.expression();
+        self.consume(TokenType::RightParen, "Expected ')' after condition.");
+        let then_branch = self.statement();
+        let mut else_branch = None;
+        if self.do_match(Vec::from([TokenType::Else])) {
+            else_branch = Some(Box::new(self.statement()));
+        }
+
+        AbstractStmt::If(If {
+            condition,
+            then_branch: Box::new(then_branch),
+            else_branch,
+        })
     }
 
     pub fn print_stmt(&mut self) -> AbstractStmt {

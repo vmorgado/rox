@@ -1,6 +1,7 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
-    Binary, Block, Grouping, Literal, Primitive, Print, Statement, Unary, Var, Variable, Visitable,
+    Binary, Block, Grouping, If, Literal, Primitive, Print, Statement, Unary, Var, Variable,
+    Visitable,
 };
 use crate::visitor::Visitor;
 pub struct Printer {}
@@ -76,4 +77,5 @@ impl Visitor<String> for Printer {
     fn visit_var(&mut self, b: &Var) {}
 
     fn visit_block(&mut self, b: &Block) {}
+    fn visit_if(&mut self, b: &If) {}
 }

@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, Literal, Primitive, Print,
+    AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, If, Literal, Primitive, Print,
     Statement, TokenType, Unary, Var, Variable, Visitable,
 };
 use crate::environment::{self, Environment};
@@ -273,6 +273,7 @@ impl Visitor<Box<Primitive>> for Interpreter {
     }
 
     fn visit_block(&mut self, b: &Block) {}
+    fn visit_if(&mut self, b: &If) {}
 }
 
 impl Visitor<Box<AbstractStmt>> for Interpreter {
@@ -323,5 +324,19 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
             &b.stmts,
             Environment::enclosed_by(Box::new(self.environment.clone())),
         );
+    }
+
+    fn visit_if(&mut self, stmt: &If) {
+        let cond_result = self.evaluate(&*stmt.condition.clone());
+        if self.is_truthy(cond_result) {
+            self.execute(&*stmt.then_branch.clone());
+            return;
+        }
+        match stmt.else_branch.clone() {
+            Some(else_stmt) => {
+                self.execute(&*else_stmt.clone());
+            }
+            None => {}
+        }
     }
 }
