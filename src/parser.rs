@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Binary, Block, Grouping, If, Literal, Primitive, Print, Statement,
-    Token, TokenType, Unary, Var, Variable, Visitable,
+    AbstractExpr, AbstractStmt, Binary, Block, Grouping, If, Literal, Logical, Primitive, Print,
+    Statement, Token, TokenType, Unary, Var, Variable, Visitable,
 };
 
 pub struct Parser {
@@ -13,6 +13,7 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Parser { current: 0, tokens }
     }
+
     pub fn parse(&mut self) -> Vec<AbstractStmt> {
         let mut statements = Vec::<AbstractStmt>::new();
         while !self.is_at_end() {
@@ -44,12 +45,14 @@ impl Parser {
         // None
     }
 
+    // assignment
     pub fn var_declaration(&mut self) -> Box<AbstractStmt> {
         let name = self
             .consume(TokenType::Identifier, "Expect variable name.")
             .clone();
 
         let mut initializer: Option<AbstractExpr> = None;
+
         if self.do_match(Vec::from([TokenType::Equal])) {
             initializer = Some(*self.expression());
         }
@@ -98,6 +101,7 @@ impl Parser {
 
     pub fn print_stmt(&mut self) -> AbstractStmt {
         let value = *self.expression();
+
         self.consume(TokenType::SemiColon, "Expected ; after value.");
 
         AbstractStmt::Print(Print {
@@ -168,6 +172,38 @@ impl Parser {
                 operator: Box::new(operator),
             }));
         }
+        expr
+    }
+
+    pub fn exp_and(&mut self) -> Box<AbstractExpr> {
+        let mut expr = self.equality();
+
+        while self.do_match(Vec::<TokenType>::from([TokenType::And])) {
+            let operator = self.previous().clone();
+            let right = self.equality();
+            expr = Box::new(AbstractExpr::Logical(Logical {
+                left: expr,
+                right,
+                operator: Box::new(operator),
+            }));
+        }
+
+        expr
+    }
+
+    pub fn exp_or(&mut self) -> Box<AbstractExpr> {
+        let mut expr = self.exp_and();
+
+        while self.do_match(Vec::<TokenType>::from([TokenType::Or])) {
+            let operator = self.previous().clone();
+            let right = self.exp_and();
+            expr = Box::new(AbstractExpr::Logical(Logical {
+                left: expr,
+                right,
+                operator: Box::new(operator),
+            }));
+        }
+
         expr
     }
 
@@ -251,6 +287,7 @@ impl Parser {
         self.error(self.peek(), "Expected Expression.");
         panic!("");
     }
+
     pub fn error(&self, token: &Token, message: &str) {
         panic!("{} {:?}", message, token);
     }
@@ -281,7 +318,7 @@ impl Parser {
     }
 
     pub fn expression(&mut self) -> Box<AbstractExpr> {
-        self.equality()
+        self.exp_or()
     }
 
     pub fn equality(&mut self) -> Box<AbstractExpr> {

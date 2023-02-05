@@ -23,6 +23,7 @@ pub enum AbstractExpr {
     Binary(Binary),
     Grouping(Grouping),
     Literal(Literal),
+    Logical(Logical),
     Unary(Unary),
     Variable(Variable),
 }
@@ -92,10 +93,18 @@ pub struct Literal {
 }
 
 #[derive(Debug, Clone)]
+pub struct Logical {
+    pub right: Box<AbstractExpr>,
+    pub left: Box<AbstractExpr>,
+    pub operator: Box<Token>,
+}
+
+#[derive(Debug, Clone)]
 pub struct Unary {
     pub right: Box<AbstractExpr>,
     pub operator: Box<Token>,
 }
+
 #[derive(Debug, Clone)]
 pub struct Variable {
     pub name: Box<Token>,
@@ -149,6 +158,7 @@ impl Visitable<String> for AbstractExpr {
             AbstractExpr::Binary(val) => v.visit_binary(val),
             AbstractExpr::Grouping(val) => v.visit_grouping(val),
             AbstractExpr::Literal(val) => v.visit_literal(val),
+            AbstractExpr::Logical(val) => v.visit_logical(val),
             AbstractExpr::Unary(val) => v.visit_unary(val),
             AbstractExpr::Variable(val) => v.visit_variable(val),
             AbstractExpr::Assign(val) => v.visit_assign(val),
@@ -162,6 +172,7 @@ impl Visitable<Box<Primitive>> for AbstractExpr {
             AbstractExpr::Binary(val) => v.visit_binary(val),
             AbstractExpr::Grouping(val) => v.visit_grouping(val),
             AbstractExpr::Literal(val) => v.visit_literal(val),
+            AbstractExpr::Logical(val) => v.visit_logical(val),
             AbstractExpr::Unary(val) => v.visit_unary(val),
             AbstractExpr::Variable(val) => v.visit_variable(val),
             AbstractExpr::Assign(val) => v.visit_assign(val),

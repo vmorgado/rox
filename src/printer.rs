@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
-    Binary, Block, Grouping, If, Literal, Primitive, Print, Statement, Unary, Var, Variable,
-    Visitable,
+    Binary, Block, Grouping, If, Literal, Logical, Primitive, Print, Statement, Unary, Var,
+    Variable, Visitable,
 };
 use crate::visitor::Visitor;
 pub struct Printer {}
@@ -53,6 +53,10 @@ impl Visitor<String> for Printer {
             Primitive::Boolean(val) => val.to_string(),
             Primitive::Nil => "nil".to_string(),
         }
+    }
+
+    fn visit_logical(&mut self, exp: &Logical) -> String {
+        "not implemented".to_string()
     }
 
     fn visit_unary(&mut self, exp: &Unary) -> String {

@@ -1,11 +1,12 @@
 use crate::ast::{
-    Assign, Binary, Block, Grouping, If, Literal, Print, Statement, Unary, Var, Variable,
+    Assign, Binary, Block, Grouping, If, Literal, Logical, Print, Statement, Unary, Var, Variable,
 };
 
 pub trait Visitor<T> {
     fn visit_binary(&mut self, b: &Binary) -> T;
     fn visit_grouping(&mut self, g: &Grouping) -> T;
     fn visit_literal(&mut self, b: &Literal) -> T;
+    fn visit_logical(&mut self, b: &Logical) -> T;
     fn visit_unary(&mut self, b: &Unary) -> T;
     fn visit_variable(&mut self, b: &Variable) -> T;
     fn visit_assign(&mut self, b: &Assign) -> T;

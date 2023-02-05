@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, If, Literal, Primitive, Print,
-    Statement, TokenType, Unary, Var, Variable, Visitable,
+    AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, If, Literal, Logical, Primitive,
+    Print, Statement, TokenType, Unary, Var, Variable, Visitable,
 };
 use crate::environment::{self, Environment};
 use crate::visitor::Visitor;
@@ -237,6 +237,26 @@ impl Visitor<Box<Primitive>> for Interpreter {
         Box::new(*val.clone())
     }
 
+    fn visit_logical(&mut self, exp: &Logical) -> Box<Primitive> {
+        let val = &*exp.left;
+        let left = self.evaluate(val);
+
+        match exp.operator.token_type {
+            TokenType::Or => {
+                if self.is_truthy(left.clone()) {
+                    return left;
+                }
+            }
+            _ => {
+                if !self.is_truthy(left.clone()) {
+                    return left;
+                }
+            }
+        }
+
+        self.evaluate(&*exp.right)
+    }
+
     fn visit_unary(&mut self, exp: &Unary) -> Box<Primitive> {
         let val = &*exp.right;
         let right = self.evaluate(val);
@@ -286,6 +306,10 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
     }
 
     fn visit_literal(&mut self, exp: &Literal) -> Box<AbstractStmt> {
+        panic!("Not implemented")
+    }
+
+    fn visit_logical(&mut self, exp: &Logical) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
 
