@@ -1,0 +1,13 @@
+var factorialOf = 4;
+
+print "Factorial of :";
+print factorialOf;
+
+var result = 1;
+
+while (factorialOf > 0) {
+      result = result * factorialOf;
+      factorialOf = factorialOf - 1;
+}
+
+print result;

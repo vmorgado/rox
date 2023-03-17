@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug rox",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/rox",
+      "args": ["examples/loops.rox"],
+      "stopAtEntry": false,
+      "miDebuggerPath": "/Users/vitor.morgado/.cargo/bin/rust-gdb",
+      "gdbpath": "/Users/vitor.morgado/.cargo/bin/rust-gdb",
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "dap-compilation": "cargo build",
+      "dap-compilation-dir": "${workspaceFolder}"
+    },
+    {
+      "name": "Release rox",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/release/rox",
+      "args": ["examples/loops.rox"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "dap-compilation": "cargo build --release",
+      "dap-compilation-dir": "${workspaceFolder}"
+    }
+  ]
+}
