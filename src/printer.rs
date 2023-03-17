@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
     Binary, Block, Grouping, If, Literal, Logical, Primitive, Print, Statement, Unary, Var,
-    Variable, Visitable,
+    Variable, Visitable, While,
 };
 use crate::visitor::Visitor;
 pub struct Printer {}
@@ -82,4 +82,5 @@ impl Visitor<String> for Printer {
 
     fn visit_block(&mut self, b: &Block) {}
     fn visit_if(&mut self, b: &If) {}
+    fn visit_while(&mut self, b: &While) {}
 }

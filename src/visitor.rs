@@ -1,5 +1,6 @@
 use crate::ast::{
     Assign, Binary, Block, Grouping, If, Literal, Logical, Print, Statement, Unary, Var, Variable,
+    While,
 };
 
 pub trait Visitor<T> {
@@ -16,4 +17,5 @@ pub trait Visitor<T> {
     fn visit_print(&mut self, b: &Print);
     fn visit_block(&mut self, b: &Block);
     fn visit_if(&mut self, b: &If);
+    fn visit_while(&mut self, b: &While);
 }

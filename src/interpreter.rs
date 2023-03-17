@@ -1,7 +1,9 @@
 #![allow(dead_code, unused_imports)]
+use std::rc::Rc;
+
 use crate::ast::{
     AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, If, Literal, Logical, Primitive,
-    Print, Statement, TokenType, Unary, Var, Variable, Visitable,
+    Print, Statement, TokenType, Unary, Var, Variable, Visitable, While,
 };
 use crate::environment::{self, Environment};
 use crate::visitor::Visitor;
@@ -18,13 +20,11 @@ pub fn stringify(p: &Primitive) -> String {
 
 #[derive(Clone)]
 pub struct Interpreter {
-    environment: Environment,
+    environment: Box<Environment>,
 }
 impl Interpreter {
-    pub fn new() -> Interpreter {
-        Interpreter {
-            environment: Environment::new(),
-        }
+    pub fn new(environment: Box<Environment>) -> Interpreter {
+        Interpreter { environment }
     }
     pub fn interpret(mut self, statements: Vec<AbstractStmt>) {
         for statement in statements {
@@ -40,15 +40,14 @@ impl Interpreter {
         stmt.accept(self);
     }
 
-    pub fn execute_block(&mut self, stmts: &Vec<AbstractStmt>, env: Environment) {
-        let previous = self.environment.clone();
+    pub fn execute_block(&mut self, stmts: &Vec<AbstractStmt>) {
+        self.environment.push_new_stack();
 
-        self.environment = env;
         for stmt in stmts {
             self.execute(stmt);
         }
 
-        self.environment = previous;
+        self.environment.pop_stack();
     }
 
     pub fn is_truthy(&self, p: Box<Primitive>) -> bool {
@@ -294,6 +293,7 @@ impl Visitor<Box<Primitive>> for Interpreter {
 
     fn visit_block(&mut self, b: &Block) {}
     fn visit_if(&mut self, b: &If) {}
+    fn visit_while(&mut self, b: &While) {}
 }
 
 impl Visitor<Box<AbstractStmt>> for Interpreter {
@@ -344,10 +344,7 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
     }
 
     fn visit_block(&mut self, b: &Block) {
-        self.execute_block(
-            &b.stmts,
-            Environment::enclosed_by(Box::new(self.environment.clone())),
-        );
+        self.execute_block(&b.stmts);
     }
 
     fn visit_if(&mut self, stmt: &If) {
@@ -361,6 +358,28 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
                 self.execute(&*else_stmt.clone());
             }
             None => {}
+        }
+    }
+
+    fn visit_while(&mut self, stmt: &While) {
+        let mut running = true;
+        while running {
+            let cond = stmt.condition.clone();
+            let eval = self.evaluate(&*cond);
+
+            match *eval {
+                Primitive::Boolean(val) => {
+                    running = self.is_truthy(Box::new(Primitive::Boolean(val)));
+
+                    if !running {
+                        return;
+                    }
+                }
+                _ => {
+                    panic!("Loop needs to resolve to Boolean");
+                }
+            }
+            self.execute(&*stmt.body);
         }
     }
 }

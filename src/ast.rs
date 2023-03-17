@@ -39,6 +39,7 @@ pub enum AbstractStmt {
     Print(Print),
     Var(Var),
     If(If),
+    While(While),
 }
 
 #[derive(Debug, Clone)]
@@ -46,6 +47,12 @@ pub struct If {
     pub condition: Box<AbstractExpr>,
     pub then_branch: Box<AbstractStmt>,
     pub else_branch: Option<Box<AbstractStmt>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct While {
+    pub condition: Box<AbstractExpr>,
+    pub body: Box<AbstractStmt>,
 }
 
 #[derive(Debug, Clone)]
@@ -118,6 +125,7 @@ impl Visitable<String> for AbstractStmt {
             AbstractStmt::Var(val) => v.visit_var(val),
             AbstractStmt::Block(val) => v.visit_block(val),
             AbstractStmt::If(val) => v.visit_if(val),
+            AbstractStmt::While(val) => v.visit_while(val),
         };
         "".to_string()
     }
@@ -131,6 +139,7 @@ impl Visitable<Box<AbstractStmt>> for AbstractStmt {
             AbstractStmt::Var(val) => v.visit_var(val),
             AbstractStmt::Block(val) => v.visit_block(val),
             AbstractStmt::If(val) => v.visit_if(val),
+            AbstractStmt::While(val) => v.visit_while(val),
         };
         Box::new(AbstractStmt::Print(Print {
             expression: Box::new(AbstractExpr::Literal(Literal {
@@ -148,6 +157,7 @@ impl Visitable<Box<Primitive>> for AbstractStmt {
             AbstractStmt::Var(val) => v.visit_var(val),
             AbstractStmt::Block(val) => v.visit_block(val),
             AbstractStmt::If(val) => v.visit_if(val),
+            AbstractStmt::While(val) => v.visit_while(val),
         };
         Box::new(Primitive::Boolean(true))
     }

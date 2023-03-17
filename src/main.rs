@@ -13,6 +13,7 @@ use crate::parser::Parser;
 use crate::printer::Printer;
 use crate::scanner::{Scanner, TokenScanner};
 use clap::{App, ArgMatches, SubCommand};
+use environment::Environment;
 use std::fs;
 
 fn build_clap_matches() -> ArgMatches {
@@ -48,7 +49,8 @@ fn run(statement: &str) {
     // let printer = Printer::new();
     // // can print result of printer to get ast printed
     // printer.print(expression.clone());
-    let itp = Interpreter::new();
+    let environment = Environment::new();
+    let itp = Interpreter::new(Box::new(environment));
     itp.interpret(statements.clone());
 }
 
