@@ -23,11 +23,11 @@ impl Parser {
         statements
     }
 
-    pub fn block(&mut self) -> Vec<AbstractStmt> {
-        let mut statements: Vec<AbstractStmt> = Vec::new();
+    pub fn block(&mut self) -> Vec<Box<AbstractStmt>> {
+        let mut statements: Vec<Box<AbstractStmt>> = Vec::new();
 
         while !self.do_check(TokenType::RightBrace) && !self.is_at_end() {
-            statements.push(*self.declaration());
+            statements.push(Box::new(*self.declaration()));
         }
 
         self.consume(TokenType::RightBrace, "Expected '}' after block.");
@@ -100,11 +100,79 @@ impl Parser {
             });
         }
 
+        if self.do_match(Vec::<TokenType>::from([TokenType::For])) {
+            return self.for_stmt();
+        }
+
         if self.do_match(Vec::<TokenType>::from([TokenType::If])) {
             return self.if_stmt();
         }
 
         self.expr_stmt()
+    }
+
+    pub fn for_stmt(&mut self) -> AbstractStmt {
+        self.consume(TokenType::LeftParen, "Expected '(' after 'for'.");
+
+        let mut initializer = None;
+
+        if self.do_match(Vec::<TokenType>::from([TokenType::SemiColon])) {
+            initializer = None;
+        } else if self.do_match(Vec::<TokenType>::from([TokenType::Var])) {
+            initializer = Some(self.var_declaration());
+        } else {
+            initializer = Some(Box::new(self.expr_stmt()));
+        }
+
+        let mut condition = None;
+
+        if !self.do_check(TokenType::SemiColon) {
+            condition = Some(*self.expression());
+        }
+
+        self.consume(TokenType::SemiColon, "Expected ';' after loop condition.");
+
+        let mut increment = None;
+        if !self.do_check(TokenType::RightParen) {
+            increment = Some(*self.expression());
+        }
+
+        self.consume(TokenType::RightParen, "Expected ')' after for clauses.");
+
+        let mut body = self.statement();
+
+        if increment != None {
+            body = AbstractStmt::Block(Block {
+                stmts: Vec::from([
+                    Box::new(body),
+                    Box::new(AbstractStmt::Statement(Statement {
+                        expression: Box::new(increment.unwrap()),
+                    })),
+                ]),
+            })
+        }
+
+        if condition == None {
+            condition = Some(AbstractExpr::Literal(Literal {
+                value: Box::new(Primitive::Boolean(true)),
+            }))
+        }
+
+        body = AbstractStmt::While(While {
+            condition: Box::new(condition.unwrap()),
+            body: Box::new(body),
+        });
+
+        match initializer {
+            Some(init) => {
+                return AbstractStmt::Block(Block {
+                    stmts: Vec::<Box<AbstractStmt>>::from([init, Box::new(body)]),
+                })
+            }
+            None => {}
+        }
+
+        return body;
     }
 
     pub fn if_stmt(&mut self) -> AbstractStmt {

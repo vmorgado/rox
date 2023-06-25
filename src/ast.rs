@@ -17,7 +17,7 @@ pub enum Primitive {
     Comment(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AbstractExpr {
     Assign(Assign),
     Binary(Binary),
@@ -32,7 +32,7 @@ pub trait Visitable<T> {
     fn accept(&self, v: &mut dyn Visitor<T>) -> T;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AbstractStmt {
     Statement(Statement),
     Block(Block),
@@ -42,77 +42,77 @@ pub enum AbstractStmt {
     While(While),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct If {
     pub condition: Box<AbstractExpr>,
     pub then_branch: Box<AbstractStmt>,
     pub else_branch: Option<Box<AbstractStmt>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct While {
     pub condition: Box<AbstractExpr>,
     pub body: Box<AbstractStmt>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Block {
-    pub stmts: Vec<AbstractStmt>,
+    pub stmts: Vec<Box<AbstractStmt>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Statement {
     pub expression: Box<AbstractExpr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Print {
     pub expression: Box<AbstractExpr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Var {
     pub name: Box<Token>,
     pub initializer: Option<AbstractExpr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assign {
     pub name: Box<Token>,
     pub value: Box<AbstractExpr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Binary {
     pub operator: Box<Token>,
     pub left: Box<AbstractExpr>,
     pub right: Box<AbstractExpr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Grouping {
     pub expression: Box<AbstractExpr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Literal {
     pub value: Box<Primitive>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Logical {
     pub right: Box<AbstractExpr>,
     pub left: Box<AbstractExpr>,
     pub operator: Box<Token>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Unary {
     pub right: Box<AbstractExpr>,
     pub operator: Box<Token>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub name: Box<Token>,
 }
@@ -148,7 +148,23 @@ impl Visitable<Box<AbstractStmt>> for AbstractStmt {
         }))
     }
 }
-
+impl Visitable<Box<AbstractStmt>> for Box<AbstractStmt> {
+    fn accept(&self, v: &mut dyn Visitor<Box<AbstractStmt>>) -> Box<AbstractStmt> {
+        match &**self {
+            AbstractStmt::Statement(exp) => v.visit_stmt(&exp),
+            AbstractStmt::Print(val) => v.visit_print(&val),
+            AbstractStmt::Var(val) => v.visit_var(&val),
+            AbstractStmt::Block(val) => v.visit_block(&val),
+            AbstractStmt::If(val) => v.visit_if(&val),
+            AbstractStmt::While(val) => v.visit_while(&val),
+        };
+        Box::new(AbstractStmt::Print(Print {
+            expression: Box::new(AbstractExpr::Literal(Literal {
+                value: Box::new(Primitive::String("".to_string())),
+            })),
+        }))
+    }
+}
 impl Visitable<Box<Primitive>> for AbstractStmt {
     fn accept(&self, v: &mut dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
         match self {
@@ -175,7 +191,6 @@ impl Visitable<String> for AbstractExpr {
         }
     }
 }
-
 impl Visitable<Box<Primitive>> for AbstractExpr {
     fn accept(&self, v: &mut dyn Visitor<Box<Primitive>>) -> Box<Primitive> {
         match self {

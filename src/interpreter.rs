@@ -40,7 +40,7 @@ impl Interpreter {
         stmt.accept(self);
     }
 
-    pub fn execute_block(&mut self, stmts: &Vec<AbstractStmt>) {
+    pub fn execute_block(&mut self, stmts: &Vec<Box<AbstractStmt>>) {
         self.environment.push_new_stack();
 
         for stmt in stmts {
@@ -225,17 +225,14 @@ impl Visitor<Box<Primitive>> for Interpreter {
 
         Box::new(Primitive::Nil)
     }
-
     fn visit_grouping(&mut self, exp: &Grouping) -> Box<Primitive> {
         let val = &*exp.expression;
         self.evaluate(val)
     }
-
     fn visit_literal(&mut self, exp: &Literal) -> Box<Primitive> {
         let val = &exp.value;
         Box::new(*val.clone())
     }
-
     fn visit_logical(&mut self, exp: &Logical) -> Box<Primitive> {
         let val = &*exp.left;
         let left = self.evaluate(val);
@@ -255,7 +252,6 @@ impl Visitor<Box<Primitive>> for Interpreter {
 
         self.evaluate(&*exp.right)
     }
-
     fn visit_unary(&mut self, exp: &Unary) -> Box<Primitive> {
         let val = &*exp.right;
         let right = self.evaluate(val);
@@ -280,17 +276,14 @@ impl Visitor<Box<Primitive>> for Interpreter {
 
         value
     }
-
     fn visit_var(&mut self, b: &Var) {}
     fn visit_print(&mut self, b: &Print) {
         let value = self.evaluate(&*b.expression.clone());
         println!("{:?}", stringify(&value));
     }
-
     fn visit_stmt(&mut self, b: &Statement) {
         self.evaluate(&*b.expression);
     }
-
     fn visit_block(&mut self, b: &Block) {}
     fn visit_if(&mut self, b: &If) {}
     fn visit_while(&mut self, b: &While) {}
@@ -300,31 +293,24 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
     fn visit_binary(&mut self, exp: &Binary) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
-
     fn visit_grouping(&mut self, exp: &Grouping) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
-
     fn visit_literal(&mut self, exp: &Literal) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
-
     fn visit_logical(&mut self, exp: &Logical) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
-
     fn visit_unary(&mut self, exp: &Unary) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
-
     fn visit_variable(&mut self, b: &Variable) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
-
     fn visit_assign(&mut self, exp: &Assign) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
-
     fn visit_print(&mut self, b: &Print) {
         let value = self.evaluate(&*b.expression.clone());
         println!("{:?}", stringify(&value));
@@ -332,7 +318,6 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
     fn visit_stmt(&mut self, b: &Statement) {
         self.evaluate(&*b.expression);
     }
-
     fn visit_var(&mut self, b: &Var) {
         let value = match &b.initializer {
             Some(exp) => *self.evaluate(exp),
@@ -342,11 +327,9 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
         let name: String = String::from(b.name.lexme.as_ref().unwrap());
         self.environment.define(name, value);
     }
-
     fn visit_block(&mut self, b: &Block) {
         self.execute_block(&b.stmts);
     }
-
     fn visit_if(&mut self, stmt: &If) {
         let cond_result = self.evaluate(&*stmt.condition.clone());
         if self.is_truthy(cond_result) {
@@ -360,7 +343,6 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
             None => {}
         }
     }
-
     fn visit_while(&mut self, stmt: &While) {
         let mut running = true;
         while running {
