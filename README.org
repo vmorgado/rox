@@ -1,124 +1,163 @@
 #+title: ROX Language
 
-Language implementation based on the Crafting Interpreters article:
-https://craftinginterpreters.com/
+A dynamically-typed scripting language interpreter built in Rust, following the [[https://craftinginterpreters.com/][Crafting Interpreters]] book — a personal exercise for learning Rust.
 
-Just a little exercise in order to learn Rust.
-
-* Build:
-
-Run this commands in order to build the project:
+* Build
 
 #+begin_src bash
-rm rox
 cargo build
 ln -s target/debug/rox rox
-sudo chmod +x ./rox
 #+end_src
 
-This should create a symlink to the executable *rox* in the root directory of the project.
+This creates a symlink ~rox~ in the project root pointing to the debug binary.
 
-* Executing:
+* Usage
 
 #+begin_src bash
-./rox # starts in repl mode
+./rox              # start REPL
+./rox <file.rox>   # execute a file
 #+end_src
+
+* Language Reference
+
+** Types
+
+| Type    | Example              |
+|---------+----------------------|
+| Number  | ~42~, ~3.14~         |
+| String  | ~"hello"~            |
+| Boolean | ~true~, ~false~      |
+| Nil     | ~nil~                |
+
+** Operators
+
+| Category   | Operators                        |
+|------------+----------------------------------|
+| Arithmetic | ~+~  ~-~  ~*~  ~/~              |
+| Comparison | ~>~  ~>=~  ~<~  ~<=~  ~==~  ~!=~ |
+| Logical    | ~and~  ~or~  ~!~                 |
+
+Strings coerce to numbers when used in arithmetic: ~"2" + 3~ evaluates to ~5~.
+
+** Variables
+
+#+begin_src rox
+var x = 10;
+var name = "rox";
+x = x + 1;
+#+end_src
+
+** Print
+
+#+begin_src rox
+print "Hello, World!";
+print 1 + 2;
+#+end_src
+
+** Blocks and Scope
+
+Variables are lexically scoped. Each block introduces a new scope.
+
+#+begin_src rox
+var a = "global";
+{
+  var a = "inner";
+  print a;   // inner
+}
+print a;     // global
+#+end_src
+
+** Conditionals
+
+#+begin_src rox
+if (a > 10) {
+  print "big";
+} else {
+  print "small";
+}
+#+end_src
+
+~and~ and ~or~ are short-circuit operators:
+
+#+begin_src rox
+print true and false;   // false
+print nil or "default"; // default
+#+end_src
+
+** Loops
+
+While loop:
+
+#+begin_src rox
+var i = 0;
+while (i < 5) {
+  i = i + 1;
+  print i;
+}
+#+end_src
+
+For loop (desugared to ~while~ internally):
+
+#+begin_src rox
+for (var i = 0; i < 5; i = i + 1) {
+  print i;
+}
+#+end_src
+
+* Examples
+
+All examples live in the ~examples/~ directory.
+
+** Factorial
 
 #+begin_src bash
-./rox <filename> # parses and executes the file
+./rox examples/factorial.rox
+# "Factorial of :"
+# "4"
+# "24"
 #+end_src
 
+#+begin_src rox
+var factorialOf = 4;
+var result = 1;
 
-** Examples:
+while (factorialOf > 0) {
+  result = result * factorialOf;
+  factorialOf = factorialOf - 1;
+}
 
-Print "Hello World" into stdout:
+print result;
+#+end_src
+
+** Fibonacci (for loop)
 
 #+begin_src bash
-./rox examples/hello.rox
-
-# > Hello World
+./rox examples/for_loops.rox
+# 0 1 1 2 3 5 8 13 21 34 55 89 ...
 #+end_src
 
-Prints the sum of two numbers:
+#+begin_src rox
+var a = 0;
+var temp;
 
-#+begin_src bash
-./rox examples/sum_example.rox
-
-# > Sum of two numbers 2 + 2:
-# > 4
-# > Casting String to Sum 2 + 3
-# > 5
+for (var b = 1; a < 10000; b = temp + b) {
+  print a;
+  temp = a;
+  a = b;
+}
 #+end_src
 
-Evaluation:
-
-#+begin_src bash
-./rox examples/evaluation.rox
-
-# > Is 3 bigger than 5
-# > false
-# > Is true really true?
-# > true
-# > Is false not true?
-# > true
-#+end_src
-
-Grouping:
-
-#+begin_src bash
-./rox examples/grouping.rox
-
-# > Binary not true
-# > false
-# > Negative
-# > -3
-# > What's the result for 3 + 5 * ( 2 - 3 ) + 5 / ( 2 + 3 )
-# > -1
-#+end_src
-
-Declaration:
-
-#+begin_src bash
-./rox examples/declaration.rox
-
-# > printing a:
-# > 10
-# > printing b:
-# > 20
-# > printing a * b
-# > 200
-#+end_src
-
-Assignemnt:
-
-#+begin_src bash
-./rox examples/assignment.rox
-
-# > 10
-# > false
-#+end_src
-
-Variable Scopes and Code Blocks:
+** Variable Scopes
 
 #+begin_src bash
 ./rox examples/scopes.rox
-
-# > inner a
-# > outer b
-# > global c
-# > outer a
-# > outer b
-# > global c
-# > global a
-# > global b
-# > global c
-#+end_src
-
-
-Conditions and Flow:
-
-#+begin_src bash
-./rox examples/condition.rox
-
-# > Yes
+# "inner a"
+# "outer b"
+# "global c"
+# "outer a"
+# "outer b"
+# "global c"
+# "global a"
+# "global b"
+# "global c"
 #+end_src
