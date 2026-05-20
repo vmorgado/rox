@@ -1,7 +1,8 @@
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, If, Literal, Logical, Primitive,
-    Print, Statement, Token, TokenType, Unary, Var, Variable, Visitable, While,
+    AbstractExpr, AbstractStmt, Assign, Binary, Block, Call, Function, Grouping, If, Literal,
+    Logical, Primitive, Print, Return, Statement, Token, TokenType, Unary, Var, Variable,
+    Visitable, While,
 };
 
 pub struct Parser {
@@ -13,7 +14,6 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Parser { current: 0, tokens }
     }
-
     pub fn parse(&mut self) -> Vec<AbstractStmt> {
         let mut statements = Vec::<AbstractStmt>::new();
         while !self.is_at_end() {
@@ -22,7 +22,6 @@ impl Parser {
 
         statements
     }
-
     pub fn block(&mut self) -> Vec<Box<AbstractStmt>> {
         let mut statements: Vec<Box<AbstractStmt>> = Vec::new();
 
@@ -33,10 +32,13 @@ impl Parser {
         self.consume(TokenType::RightBrace, "Expected '}' after block.");
         statements
     }
-
     pub fn declaration(&mut self) -> Box<AbstractStmt> {
         if self.do_match(Vec::from([TokenType::Var])) {
             return self.var_declaration();
+        }
+
+        if self.do_match(Vec::from([TokenType::Fun])) {
+            return Box::new(self.function_declaration("function"));
         }
 
         return Box::new(self.statement());
@@ -44,8 +46,6 @@ impl Parser {
         // self.synchronize();
         // None
     }
-
-    // assignment
     pub fn assignment(&mut self) -> Box<AbstractExpr> {
         let expr = self.exp_or();
 
@@ -66,7 +66,6 @@ impl Parser {
 
         return expr;
     }
-
     pub fn var_declaration(&mut self) -> Box<AbstractStmt> {
         let name = self
             .consume(TokenType::Identifier, "Expect variable name.")
@@ -84,10 +83,54 @@ impl Parser {
             initializer,
         }))
     }
+    pub fn function_declaration(&mut self, kind: &str) -> AbstractStmt {
+        let name = Box::new(
+            self.consume(TokenType::Identifier, &format!("Expect {} name.", kind))
+                .clone(),
+        );
 
+        self.consume(
+            TokenType::LeftParen,
+            &format!("Expect '(' after {} name.", kind),
+        );
+
+        let mut params: Vec<Box<Token>> = Vec::new();
+
+        if !self.do_check(TokenType::RightParen) {
+            loop {
+                if params.len() >= 255 {
+                    self.error(self.peek(), "Can't have more than 255 parameters.");
+                }
+
+                params.push(Box::new(
+                    self.consume(TokenType::Identifier, "Expect parameter name.")
+                        .clone(),
+                ));
+
+                if !self.do_match(Vec::from([TokenType::Comma])) {
+                    break;
+                }
+            }
+        }
+
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.");
+
+        self.consume(
+            TokenType::LeftBrace,
+            &format!("Expect '{{' before {} body.", kind),
+        );
+
+        let body = self.block();
+
+        AbstractStmt::Function(Box::new(Function { name, params, body }))
+    }
     pub fn statement(&mut self) -> AbstractStmt {
         if self.do_match(Vec::<TokenType>::from([TokenType::Print])) {
             return self.print_stmt();
+        }
+
+        if self.do_match(Vec::<TokenType>::from([TokenType::Return])) {
+            return self.return_stmt();
         }
 
         if self.do_match(Vec::<TokenType>::from([TokenType::While])) {
@@ -110,7 +153,6 @@ impl Parser {
 
         self.expr_stmt()
     }
-
     pub fn for_stmt(&mut self) -> AbstractStmt {
         self.consume(TokenType::LeftParen, "Expected '(' after 'for'.");
 
@@ -174,7 +216,6 @@ impl Parser {
 
         return body;
     }
-
     pub fn if_stmt(&mut self) -> AbstractStmt {
         self.consume(TokenType::LeftParen, "Expected '(' after 'if'.");
         let condition = self.expression();
@@ -191,7 +232,6 @@ impl Parser {
             else_branch,
         })
     }
-
     pub fn while_stmt(&mut self) -> AbstractStmt {
         self.consume(TokenType::LeftParen, "Expects '(' after 'while'.");
         let condition = Box::new(*self.expression().clone());
@@ -200,7 +240,6 @@ impl Parser {
 
         AbstractStmt::While(While { condition, body })
     }
-
     pub fn print_stmt(&mut self) -> AbstractStmt {
         let value = *self.expression();
 
@@ -208,6 +247,28 @@ impl Parser {
 
         AbstractStmt::Print(Print {
             expression: Box::new(value),
+        })
+    }
+    pub fn return_stmt(&mut self) -> AbstractStmt {
+        let keyword = Box::new(self.previous().clone());
+        let mut value = None;
+
+        if !self.do_check(TokenType::SemiColon) {
+            value = Some(*self.expression());
+        }
+
+        self.consume(TokenType::SemiColon, "Expected ';' after return value.");
+
+        let val = match value {
+            Some(v) => Box::new(v),
+            None => Box::new(AbstractExpr::Literal(Literal {
+                value: Box::new(Primitive::Nil),
+            })),
+        };
+
+        AbstractStmt::Return(Return {
+            keyword,
+            value: val,
         })
     }
 
@@ -233,22 +294,18 @@ impl Parser {
         }
         false
     }
-
     pub fn advance(&mut self) -> &Token {
         if !self.is_at_end() {
             self.current += 1;
         }
         self.previous()
     }
-
     pub fn is_at_end(&self) -> bool {
         self.peek().token_type == TokenType::Eof
     }
-
     pub fn peek(&self) -> &Token {
         self.tokens.get(self.current).unwrap()
     }
-
     pub fn do_check(&self, token_type: TokenType) -> bool {
         if self.is_at_end() {
             return false;
@@ -256,7 +313,6 @@ impl Parser {
 
         self.peek().token_type == token_type
     }
-
     pub fn comparison(&mut self) -> Box<AbstractExpr> {
         let mut expr = self.term();
 
@@ -276,7 +332,6 @@ impl Parser {
         }
         expr
     }
-
     pub fn exp_and(&mut self) -> Box<AbstractExpr> {
         let mut expr = self.equality();
 
@@ -292,7 +347,6 @@ impl Parser {
 
         expr
     }
-
     pub fn exp_or(&mut self) -> Box<AbstractExpr> {
         let mut expr = self.exp_and();
 
@@ -308,7 +362,6 @@ impl Parser {
 
         expr
     }
-
     pub fn term(&mut self) -> Box<AbstractExpr> {
         let mut expr = self.factor();
         while self.do_match(Vec::<TokenType>::from([TokenType::Minus, TokenType::Plus])) {
@@ -322,7 +375,6 @@ impl Parser {
         }
         expr
     }
-
     pub fn factor(&mut self) -> Box<AbstractExpr> {
         let mut expr = self.unary();
         while self.do_match(Vec::<TokenType>::from([TokenType::Slash, TokenType::Star])) {
@@ -336,7 +388,38 @@ impl Parser {
         }
         expr
     }
+    pub fn finish_call(&mut self, callee: Box<AbstractExpr>) -> Box<AbstractExpr> {
+        let mut arguments = Vec::<Box<AbstractExpr>>::new();
+        if !self.do_check(TokenType::RightParen) {
+            loop {
+                if arguments.len() >= 255 {
+                    self.error(self.peek(), "Can't have more than 255 arguments.");
+                }
+                arguments.push(self.expression());
+                if !self.do_match(Vec::<TokenType>::from([TokenType::Comma])) {
+                    break;
+                }
+            }
+        }
+        let paren = self.consume(TokenType::RightParen, "Expected ')' after arguments.");
 
+        Box::new(AbstractExpr::Call(Call {
+            callee,
+            paren: Box::new(paren.clone()),
+            arguments,
+        }))
+    }
+    pub fn call(&mut self) -> Box<AbstractExpr> {
+        let mut expr = self.primary();
+        loop {
+            if self.do_match(Vec::<TokenType>::from([TokenType::LeftParen])) {
+                expr = self.finish_call(expr);
+            } else {
+                break;
+            }
+        }
+        expr
+    }
     pub fn unary(&mut self) -> Box<AbstractExpr> {
         if self.do_match(Vec::<TokenType>::from([TokenType::Bang, TokenType::Minus])) {
             let operator = self.previous().clone();
@@ -346,9 +429,8 @@ impl Parser {
                 operator: Box::new(operator),
             }));
         }
-        self.primary()
+        self.call()
     }
-
     pub fn primary(&mut self) -> Box<AbstractExpr> {
         if self.do_match(Vec::<TokenType>::from([TokenType::False])) {
             return Box::new(AbstractExpr::Literal(Literal {
@@ -389,11 +471,9 @@ impl Parser {
         self.error(self.peek(), "Expected Expression.");
         panic!("");
     }
-
     pub fn error(&self, token: &Token, message: &str) {
         panic!("{} Instead found {:?}", message, token);
     }
-
     pub fn synchronize(&mut self) {
         self.advance();
         while !self.is_at_end() {
@@ -408,7 +488,6 @@ impl Parser {
             self.advance();
         }
     }
-
     pub fn consume(&mut self, token_type: TokenType, message: &str) -> &Token {
         if self.do_check(token_type) {
             return self.advance();
@@ -418,11 +497,9 @@ impl Parser {
         // TODO: Handle errors better;
         panic!("");
     }
-
     pub fn expression(&mut self) -> Box<AbstractExpr> {
         self.assignment()
     }
-
     pub fn equality(&mut self) -> Box<AbstractExpr> {
         let mut expr = self.comparison();
 

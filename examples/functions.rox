@@ -1,0 +1,31 @@
+fun add(a, b) {
+  return a + b;
+}
+
+print add(3, 4);
+
+fun greet(name) {
+  print "Hello,";
+  print name;
+}
+
+greet("World");
+
+fun fibonacci(n) {
+  if (n <= 1) {
+    return n;
+  }
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+print fibonacci(10);
+
+fun square(x) {
+  return x * x;
+}
+
+var i = 1;
+while (i <= 5) {
+  print square(i);
+  i = i + 1;
+}

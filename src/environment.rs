@@ -15,8 +15,7 @@ impl Environment {
         }
     }
 
-    pub fn push_new_stack(&mut self) {
-        let values = HashMap::new();
+    pub fn push_new_stack(&mut self, values: HashMap<String, Primitive>) {
         self.stack.push(values);
     }
 
@@ -25,7 +24,7 @@ impl Environment {
     }
 
     pub fn define(&mut self, name: String, value: Primitive) {
-        match self.stack.get_mut(0) {
+        match self.stack.last_mut() {
             Some(hash) => {
                 hash.insert(name, value);
             }
@@ -38,22 +37,20 @@ impl Environment {
     pub fn assign(&mut self, name: &Token, value: Primitive) {
         let key = name.lexme.as_ref().unwrap();
 
-        for i in 0..self.stack.len() {
-            let values = self.stack.get_mut(i);
-            if let Some(hash) = values {
-                hash.insert(key.to_string(), value.clone());
+        for values in self.stack.iter_mut().rev() {
+            if values.contains_key(key) {
+                values.insert(key.to_string(), value);
                 return;
             }
         }
 
         self.define(key.to_string(), value);
-        return;
     }
 
     pub fn get(&self, name: &Token) -> Box<Primitive> {
         let key = name.lexme.as_ref().unwrap();
 
-        for values in &self.stack {
+        for values in self.stack.iter().rev() {
             if values.contains_key(key) {
                 return Box::new(values.get(key).unwrap().clone());
             }

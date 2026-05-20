@@ -1,9 +1,10 @@
 #![allow(dead_code, unused_imports)]
-use std::rc::Rc;
+use std::collections::HashMap;
 
 use crate::ast::{
-    AbstractExpr, AbstractStmt, Assign, Binary, Block, Grouping, If, Literal, Logical, Primitive,
-    Print, Statement, TokenType, Unary, Var, Variable, Visitable, While,
+    AbstractExpr, AbstractStmt, Assign, Binary, Block, Call, Function, Grouping, If, Literal,
+    Logical, Primitive, Print, Return, Statement, TokenType, Unary, Var, Variable,
+    Visitable, While,
 };
 use crate::environment::{self, Environment};
 use crate::visitor::Visitor;
@@ -21,35 +22,45 @@ pub fn stringify(p: &Primitive) -> String {
 #[derive(Clone)]
 pub struct Interpreter {
     environment: Box<Environment>,
+    return_value: Option<Primitive>,
 }
+
 impl Interpreter {
     pub fn new(environment: Box<Environment>) -> Interpreter {
-        Interpreter { environment }
+        Interpreter { environment, return_value: None }
     }
     pub fn interpret(mut self, statements: Vec<AbstractStmt>) {
         for statement in statements {
             self.execute(&statement);
         }
     }
-
     pub fn evaluate(&mut self, exp: &dyn Visitable<Box<Primitive>>) -> Box<Primitive> {
         exp.accept(self)
     }
-
     pub fn execute(&mut self, stmt: &dyn Visitable<Box<AbstractStmt>>) {
         stmt.accept(self);
     }
+    pub fn execute_block(
+        &mut self,
+        stmts: &Vec<Box<AbstractStmt>>,
+        function_params: Option<HashMap<String, Primitive>>,
+    ) {
+        let function_environment = match function_params {
+            Some(params) => params,
+            None => HashMap::new(),
+        };
 
-    pub fn execute_block(&mut self, stmts: &Vec<Box<AbstractStmt>>) {
-        self.environment.push_new_stack();
+        self.environment.push_new_stack(function_environment);
 
         for stmt in stmts {
             self.execute(stmt);
+            if self.return_value.is_some() {
+                break;
+            }
         }
 
         self.environment.pop_stack();
     }
-
     pub fn is_truthy(&self, p: Box<Primitive>) -> bool {
         match *p {
             Primitive::Nil => false,
@@ -72,156 +83,156 @@ impl Visitor<Box<Primitive>> for Interpreter {
         };
 
         match exp.operator.token_type {
-                TokenType::Minus => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Number(left_val - right_val))
-                        }
-                        Primitive::String(right_val_str) => {
-                            let right_val = match right_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast the string to number for right value for subtraction")
-                            };
-                            return Box::new(Primitive::Number(left_val - right_val));
-                        }
-                        _ => panic!("TODO: Not implemented - Second value from subtraction not casted to Number"),
-                    },
-                    Primitive::String(left_val_str) => match *right {
-                        Primitive::Number(right_val) => {
-                            let left_val = match left_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast string to number for left value for subtraction")
-                            };
-
-                            return Box::new(Primitive::Number(left_val - right_val));
-                        }
-                        Primitive::String(right_val_str) => {
-                            let left_val = match left_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast string to number for left value for subtraction")
-                            };
-                            let right_val = match right_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast the string to number for right value for subtraction")
-                            };
-                            return Box::new(Primitive::Number(left_val - right_val));
-                        }
-                        _ => panic!("TODO: Not implemented - Second value from subtraction not casted to Number"),
+            TokenType::Minus => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Number(left_val - right_val))
                     }
-                    _ => panic!("TODO: Not implemented - First value from subtraction not casted to Number"),
-                },
-                TokenType::Slash => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Number(left_val / right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Second value from division not casted to Number"),
-                    },
-                        _ => panic!("TODO: Not implemented - First value from division not casted to Number"),
-                },
-                TokenType::Star => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Number(left_val * right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Second value from multiplication not casted to Number"),
-                    },
-                        _ => panic!("TODO: Not implemented - First value from multiplication not casted to Number"),
-                },
-                TokenType::Plus => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Number(left_val + right_val))
-                        }
-                        Primitive::String(right_val_str) => {
-                            let right_val = match right_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast the string to number for right value for sum")
-                            };
-                            return Box::new(Primitive::Number(left_val + right_val));
-                        }
-                        _ => panic!("TODO: Not implemented - Second value from sum not casted to Number"),
-                    },
-                    Primitive::String(left_val_str) => match *right {
-                        Primitive::Number(right_val) => {
-                            let left_val = match left_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast string to number for left value for sum")
-                            };
-
-                            return Box::new(Primitive::Number(left_val + right_val));
-                        }
-                        Primitive::String(right_val_str) => {
-                            let left_val = match left_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast string to number for left value for sum")
-                            };
-                            let right_val = match right_val_str.parse::<f64>() {
-                                Ok(v) => v,
-                                _ => panic!("Cannot cast the string to number for right value for sum")
-                            };
-                            return Box::new(Primitive::Number(left_val + right_val));
-                        }
-                        _ => panic!("TODO: Not implemented - Second value from sum not casted to Number"),
+                    Primitive::String(right_val_str) => {
+                        let right_val = match right_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast the string to number for right value for subtraction")
+                        };
+                        return Box::new(Primitive::Number(left_val - right_val));
                     }
-                    _ => panic!("TODO: Not implemented - First value from sum not casted to Number"),
+                    _ => panic!("TODO: Not implemented - Second value from subtraction not casted to Number"),
                 },
-                TokenType::Greater => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Boolean(left_val > right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
-                    },
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                Primitive::String(left_val_str) => match *right {
+                    Primitive::Number(right_val) => {
+                        let left_val = match left_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast string to number for left value for subtraction")
+                        };
+
+                        return Box::new(Primitive::Number(left_val - right_val));
+                    }
+                    Primitive::String(right_val_str) => {
+                        let left_val = match left_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast string to number for left value for subtraction")
+                        };
+                        let right_val = match right_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast the string to number for right value for subtraction")
+                        };
+                        return Box::new(Primitive::Number(left_val - right_val));
+                    }
+                    _ => panic!("TODO: Not implemented - Second value from subtraction not casted to Number"),
+                }
+                _ => panic!("TODO: Not implemented - First value from subtraction not casted to Number"),
+            },
+            TokenType::Slash => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Number(left_val / right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Second value from division not casted to Number"),
                 },
-                TokenType::GreaterEqual => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Boolean(left_val >= right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
-                    },
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                    _ => panic!("TODO: Not implemented - First value from division not casted to Number"),
+            },
+            TokenType::Star => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Number(left_val * right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Second value from multiplication not casted to Number"),
                 },
-                TokenType::Less => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Boolean(left_val < right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
-                    },
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                    _ => panic!("TODO: Not implemented - First value from multiplication not casted to Number"),
+            },
+            TokenType::Plus => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Number(left_val + right_val))
+                    }
+                    Primitive::String(right_val_str) => {
+                        let right_val = match right_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast the string to number for right value for sum")
+                        };
+                        return Box::new(Primitive::Number(left_val + right_val));
+                    }
+                    _ => panic!("TODO: Not implemented - Second value from sum not casted to Number"),
                 },
-                TokenType::LessEqual => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Boolean(left_val <= right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
-                    },
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                Primitive::String(left_val_str) => match *right {
+                    Primitive::Number(right_val) => {
+                        let left_val = match left_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast string to number for left value for sum")
+                        };
+
+                        return Box::new(Primitive::Number(left_val + right_val));
+                    }
+                    Primitive::String(right_val_str) => {
+                        let left_val = match left_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast string to number for left value for sum")
+                        };
+                        let right_val = match right_val_str.parse::<f64>() {
+                            Ok(v) => v,
+                            _ => panic!("Cannot cast the string to number for right value for sum")
+                        };
+                        return Box::new(Primitive::Number(left_val + right_val));
+                    }
+                    _ => panic!("TODO: Not implemented - Second value from sum not casted to Number"),
+                }
+                _ => panic!("TODO: Not implemented - First value from sum not casted to Number"),
+            },
+            TokenType::Greater => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Boolean(left_val > right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
                 },
-                TokenType::BangEqual => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Boolean(left_val != right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
-                    },
-                    left_val => return Box::new(Primitive::Boolean(left_val != *right)),
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+            },
+            TokenType::GreaterEqual => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Boolean(left_val >= right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
                 },
-                TokenType::EqualEqual => match *left {
-                    Primitive::Number(left_val) => match *right {
-                        Primitive::Number(right_val) => {
-                            return Box::new(Primitive::Boolean(left_val == right_val))
-                        }
-                        _ => panic!("TODO: Not implemented - Can only compare Numbers"),
-                    },
-                    left_val => return Box::new(Primitive::Boolean(left_val == *right)),
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+            },
+            TokenType::Less => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Boolean(left_val < right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
                 },
-                _ => {}
-            };
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+            },
+            TokenType::LessEqual => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Boolean(left_val <= right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                },
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+            },
+            TokenType::BangEqual => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Boolean(left_val != right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                },
+                left_val => return Box::new(Primitive::Boolean(left_val != *right)),
+            },
+            TokenType::EqualEqual => match *left {
+                Primitive::Number(left_val) => match *right {
+                    Primitive::Number(right_val) => {
+                        return Box::new(Primitive::Boolean(left_val == right_val))
+                    }
+                    _ => panic!("TODO: Not implemented - Can only compare Numbers"),
+                },
+                left_val => return Box::new(Primitive::Boolean(left_val == *right)),
+            },
+            _ => {}
+        };
 
         Box::new(Primitive::Nil)
     }
@@ -276,17 +287,47 @@ impl Visitor<Box<Primitive>> for Interpreter {
 
         value
     }
+    fn visit_call(&mut self, stmt: &Call) -> Box<Primitive> {
+        let callee = self.evaluate(&*stmt.callee.clone());
+
+        let mut args: Vec<Primitive> = Vec::new();
+        for arg in &stmt.arguments {
+            args.push(*self.evaluate(&**arg));
+        }
+
+        match *callee {
+            Primitive::Callable(function) => {
+                if args.len() != function.params.len() {
+                    panic!(
+                        "Expected {} arguments but got {}",
+                        function.params.len(),
+                        args.len()
+                    );
+                }
+
+                let mut params = HashMap::new();
+                for (i, param) in function.params.iter().enumerate() {
+                    params.insert(param.lexme.clone().unwrap(), args[i].clone());
+                }
+
+                self.execute_block(&function.body, Some(params));
+                Box::new(self.return_value.take().unwrap_or(Primitive::Nil))
+            }
+            _ => {
+                panic!("Can only call functions and classes");
+            }
+        }
+    }
+
+    // Statement visitors are no-ops in this impl; execution goes through Visitor<Box<AbstractStmt>>
     fn visit_var(&mut self, b: &Var) {}
-    fn visit_print(&mut self, b: &Print) {
-        let value = self.evaluate(&*b.expression.clone());
-        println!("{:?}", stringify(&value));
-    }
-    fn visit_stmt(&mut self, b: &Statement) {
-        self.evaluate(&*b.expression);
-    }
+    fn visit_print(&mut self, b: &Print) {}
+    fn visit_stmt(&mut self, b: &Statement) {}
     fn visit_block(&mut self, b: &Block) {}
     fn visit_if(&mut self, b: &If) {}
     fn visit_while(&mut self, b: &While) {}
+    fn visit_function(&mut self, b: &Function) {}
+    fn visit_return(&mut self, b: &Return) {}
 }
 
 impl Visitor<Box<AbstractStmt>> for Interpreter {
@@ -311,6 +352,10 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
     fn visit_assign(&mut self, exp: &Assign) -> Box<AbstractStmt> {
         panic!("Not implemented")
     }
+    fn visit_call(&mut self, exp: &Call) -> Box<AbstractStmt> {
+        panic!("Not implemented")
+    }
+
     fn visit_print(&mut self, b: &Print) {
         let value = self.evaluate(&*b.expression.clone());
         println!("{:?}", stringify(&value));
@@ -328,7 +373,7 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
         self.environment.define(name, value);
     }
     fn visit_block(&mut self, b: &Block) {
-        self.execute_block(&b.stmts);
+        self.execute_block(&b.stmts, None);
     }
     fn visit_if(&mut self, stmt: &If) {
         let cond_result = self.evaluate(&*stmt.condition.clone());
@@ -363,5 +408,14 @@ impl Visitor<Box<AbstractStmt>> for Interpreter {
             }
             self.execute(&*stmt.body);
         }
+    }
+    fn visit_function(&mut self, b: &Function) {
+        let function = Primitive::Callable(Box::new(b.clone()));
+        let name = b.name.lexme.as_ref().unwrap().clone();
+        self.environment.define(name, function);
+    }
+    fn visit_return(&mut self, b: &Return) {
+        let value = self.evaluate(&*b.value);
+        self.return_value = Some(*value);
     }
 }

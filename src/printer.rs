@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports)]
 use crate::ast::{
-    Binary, Block, Grouping, If, Literal, Logical, Primitive, Print, Statement, Unary, Var,
-    Variable, Visitable, While,
+    Binary, Block, Call, Function, Grouping, If, Literal, Logical, Primitive, Print, Return,
+    Statement, Unary, Var, Variable, Visitable, While,
 };
 use crate::visitor::Visitor;
 pub struct Printer {}
@@ -52,34 +52,30 @@ impl Visitor<String> for Printer {
             Primitive::Comment(val) => val.to_string(),
             Primitive::Boolean(val) => val.to_string(),
             Primitive::Nil => "nil".to_string(),
+            Primitive::Callable(_) => "".to_string(),
         }
     }
-
     fn visit_logical(&mut self, exp: &Logical) -> String {
         "not implemented".to_string()
     }
-
     fn visit_unary(&mut self, exp: &Unary) -> String {
         self.parenthesize(
             &exp.operator.lexme.clone().unwrap(),
             Vec::from([Box::<&dyn Visitable<String>>::new(&*exp.right)]),
         )
     }
-
     fn visit_assign(&mut self, exp: &crate::ast::Assign) -> String {
         "Not implemented".to_string()
     }
-
     fn visit_variable(&mut self, b: &Variable) -> String {
         "Not implemented".to_string()
     }
-
     fn visit_print(&mut self, exp: &Print) {}
-
     fn visit_stmt(&mut self, exp: &Statement) {}
-
     fn visit_var(&mut self, b: &Var) {}
-
+    fn visit_call(&mut self, b: &Call) -> String { "".to_string() }
+    fn visit_function(&mut self, b: &Function) {}
+    fn visit_return(&mut self, b: &Return) {}
     fn visit_block(&mut self, b: &Block) {}
     fn visit_if(&mut self, b: &If) {}
     fn visit_while(&mut self, b: &While) {}

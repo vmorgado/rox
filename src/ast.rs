@@ -8,6 +8,7 @@ pub struct Token {
     pub literal: Option<Primitive>,
     pub line: usize,
 }
+
 #[derive(PartialEq, Clone, Debug)]
 pub enum Primitive {
     Nil,
@@ -15,21 +16,19 @@ pub enum Primitive {
     String(String),
     Number(f64),
     Comment(String),
+    Callable(Box<Function>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AbstractExpr {
     Assign(Assign),
     Binary(Binary),
+    Call(Call),
     Grouping(Grouping),
     Literal(Literal),
     Logical(Logical),
     Unary(Unary),
     Variable(Variable),
-}
-
-pub trait Visitable<T> {
-    fn accept(&self, v: &mut dyn Visitor<T>) -> T;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,6 +39,19 @@ pub enum AbstractStmt {
     Var(Var),
     If(If),
     While(While),
+    Function(Box<Function>),
+    Return(Return),
+}
+
+pub trait Visitable<T> {
+    fn accept(&self, v: &mut dyn Visitor<T>) -> T;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Function {
+    pub name: Box<Token>,
+    pub params: Vec<Box<Token>>,
+    pub body: Vec<Box<AbstractStmt>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -68,6 +80,12 @@ pub struct Statement {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Print {
     pub expression: Box<AbstractExpr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Return {
+    pub keyword: Box<Token>,
+    pub value: Box<AbstractExpr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -113,6 +131,13 @@ pub struct Unary {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Call {
+    pub callee: Box<AbstractExpr>,
+    pub paren: Box<Token>,
+    pub arguments: Vec<Box<AbstractExpr>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub name: Box<Token>,
 }
@@ -126,11 +151,12 @@ impl Visitable<String> for AbstractStmt {
             AbstractStmt::Block(val) => v.visit_block(val),
             AbstractStmt::If(val) => v.visit_if(val),
             AbstractStmt::While(val) => v.visit_while(val),
+            AbstractStmt::Function(val) => v.visit_function(val),
+            AbstractStmt::Return(val) => v.visit_return(val),
         };
         "".to_string()
     }
 }
-
 impl Visitable<Box<AbstractStmt>> for AbstractStmt {
     fn accept(&self, v: &mut dyn Visitor<Box<AbstractStmt>>) -> Box<AbstractStmt> {
         match self {
@@ -140,6 +166,8 @@ impl Visitable<Box<AbstractStmt>> for AbstractStmt {
             AbstractStmt::Block(val) => v.visit_block(val),
             AbstractStmt::If(val) => v.visit_if(val),
             AbstractStmt::While(val) => v.visit_while(val),
+            AbstractStmt::Function(val) => v.visit_function(val),
+            AbstractStmt::Return(val) => v.visit_return(val),
         };
         Box::new(AbstractStmt::Print(Print {
             expression: Box::new(AbstractExpr::Literal(Literal {
@@ -157,6 +185,8 @@ impl Visitable<Box<AbstractStmt>> for Box<AbstractStmt> {
             AbstractStmt::Block(val) => v.visit_block(&val),
             AbstractStmt::If(val) => v.visit_if(&val),
             AbstractStmt::While(val) => v.visit_while(&val),
+            AbstractStmt::Function(val) => v.visit_function(&val),
+            AbstractStmt::Return(val) => v.visit_return(&val),
         };
         Box::new(AbstractStmt::Print(Print {
             expression: Box::new(AbstractExpr::Literal(Literal {
@@ -174,6 +204,8 @@ impl Visitable<Box<Primitive>> for AbstractStmt {
             AbstractStmt::Block(val) => v.visit_block(val),
             AbstractStmt::If(val) => v.visit_if(val),
             AbstractStmt::While(val) => v.visit_while(val),
+            AbstractStmt::Function(val) => v.visit_function(val),
+            AbstractStmt::Return(val) => v.visit_return(val),
         };
         Box::new(Primitive::Boolean(true))
     }
@@ -188,6 +220,7 @@ impl Visitable<String> for AbstractExpr {
             AbstractExpr::Unary(val) => v.visit_unary(val),
             AbstractExpr::Variable(val) => v.visit_variable(val),
             AbstractExpr::Assign(val) => v.visit_assign(val),
+            AbstractExpr::Call(val) => v.visit_call(val),
         }
     }
 }
@@ -201,6 +234,7 @@ impl Visitable<Box<Primitive>> for AbstractExpr {
             AbstractExpr::Unary(val) => v.visit_unary(val),
             AbstractExpr::Variable(val) => v.visit_variable(val),
             AbstractExpr::Assign(val) => v.visit_assign(val),
+            AbstractExpr::Call(val) => v.visit_call(val),
         }
     }
 }
